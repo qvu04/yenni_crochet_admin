@@ -49,3 +49,8 @@ export const usePromotionActiveMutation = () => {
     onSuccess: () => invalidateVouchers(queryClient),
   })
 }
+
+export const useUploadPromotionBannerMutation = () =>
+  useMutation({
+    mutationFn: (file: File) => voucherServices.uploadPromotionBanner(file),
+  })

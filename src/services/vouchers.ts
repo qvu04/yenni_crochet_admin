@@ -1,6 +1,10 @@
 import type { PromotionFormValues } from '../schemas'
 import { supabase } from './supabase'
 
+const PROMOTION_STORAGE_BUCKET = 'Products'
+const PROMOTION_BANNERS_FOLDER = 'vouchers'
+const MAX_PROMOTION_BANNER_SIZE = 5 * 1024 * 1024
+
 export type PromotionDiscountType = 'percent' | 'fixed' | 'free_shipping'
 export type PromotionFilter = 'all' | 'active' | 'inactive' | 'current' | 'upcoming' | 'expired'
 export type UserPromotionStatus = 'claimed' | 'used' | 'expired'
@@ -48,6 +52,11 @@ const PROMOTION_SELECT = `
 `
 
 const normalizeSearchTerm = (value: string) => value.trim().replace(/[,%()]/g, ' ').replace(/\s+/g, ' ')
+
+const getFileExtension = (fileName: string) => {
+  const extension = fileName.split('.').pop()?.toLowerCase()
+  return extension || 'jpg'
+}
 
 const toPromotionPayload = (values: PromotionFormValues) => ({
   title: values.title.trim(),
@@ -134,6 +143,29 @@ export const voucherServices = {
     if (error) {
       throw new Error(error.message)
     }
+  },
+
+  uploadPromotionBanner: async (file: File): Promise<string> => {
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Chỉ hỗ trợ tải ảnh voucher.')
+    }
+
+    if (file.size > MAX_PROMOTION_BANNER_SIZE) {
+      throw new Error('Ảnh voucher tối đa 5MB.')
+    }
+
+    const path = `${PROMOTION_BANNERS_FOLDER}/${Date.now()}-${crypto.randomUUID()}.${getFileExtension(file.name)}`
+    const { error } = await supabase.storage.from(PROMOTION_STORAGE_BUCKET).upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    const { data } = supabase.storage.from(PROMOTION_STORAGE_BUCKET).getPublicUrl(path)
+    return data.publicUrl
   },
 
   toPromotionFormValues: (promotion: Promotion): PromotionFormValues => ({

@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { AiOutlineLoading3Quarters } from 'react-icons/ai'
+import { AiOutlineClose, AiOutlineCloudUpload, AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { ActionNotice, Button, SegmentedControl } from '../../../components/ui'
-import { useCreatePromotionMutation, useUpdatePromotionMutation } from '../../../queries'
+import { useCreatePromotionMutation, useUpdatePromotionMutation, useUploadPromotionBannerMutation } from '../../../queries'
 import { promotionFormSchema, type PromotionFormValues } from '../../../schemas'
 import { voucherServices, type Promotion } from '../../../services'
 import { defaultPromotionValues, promotionDiscountTypeOptions } from '../../../utils'
@@ -18,6 +18,7 @@ interface VoucherFormDialogProps {
 export const VoucherFormDialog = ({ promotion, onClose, onSaved }: VoucherFormDialogProps) => {
   const createMutation = useCreatePromotionMutation()
   const updateMutation = useUpdatePromotionMutation()
+  const uploadBannerMutation = useUploadPromotionBannerMutation()
   const isEditing = Boolean(promotion)
   const {
     register,
@@ -32,8 +33,8 @@ export const VoucherFormDialog = ({ promotion, onClose, onSaved }: VoucherFormDi
   })
   const discountType = watch('discount_type')
   const bannerUrl = watch('banner_url')
-  const isSubmitting = createMutation.isPending || updateMutation.isPending
-  const submitError = createMutation.error?.message || updateMutation.error?.message
+  const isSubmitting = createMutation.isPending || updateMutation.isPending || uploadBannerMutation.isPending
+  const submitError = createMutation.error?.message || updateMutation.error?.message || uploadBannerMutation.error?.message
   const nullableNumberRegisterOptions = {
     setValueAs: (value: string) => (value === '' ? null : Number(value)),
   }
@@ -41,6 +42,17 @@ export const VoucherFormDialog = ({ promotion, onClose, onSaved }: VoucherFormDi
   useEffect(() => {
     reset(promotion ? voucherServices.toPromotionFormValues(promotion) : defaultPromotionValues)
   }, [promotion, reset])
+
+  const handleBannerUpload = (files: FileList | null) => {
+    const file = files?.[0]
+    if (!file) return
+
+    uploadBannerMutation.mutate(file, {
+      onSuccess: (url) => {
+        setValue('banner_url', url, { shouldDirty: true, shouldValidate: true })
+      },
+    })
+  }
 
   const onSubmit = (values: PromotionFormValues) => {
     if (promotion) {
@@ -156,15 +168,41 @@ export const VoucherFormDialog = ({ promotion, onClose, onSaved }: VoucherFormDi
               </VoucherFormSection>
 
               <VoucherFormSection title="Hiển thị">
-                <VoucherFormField label="Banner URL" error={errors.banner_url?.message}>
-                  <input {...register('banner_url')} className="admin-input" placeholder="https://..." />
-                </VoucherFormField>
                 <VoucherFormField label="Campaign ID" error={errors.campaign_id?.message}>
                   <input {...register('campaign_id')} className="admin-input" placeholder="Có thể để trống" />
                 </VoucherFormField>
+                <div>
+                  <p className="mb-2 text-sm font-bold text-cocoa">Banner voucher</p>
+                  <input type="hidden" {...register('banner_url')} />
+                  <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-admin border border-dashed border-berry/25 bg-cream px-4 py-7 text-center transition hover:border-berry">
+                    <AiOutlineCloudUpload className="text-4xl text-berry" />
+                    <span className="mt-3 text-sm font-black text-ink">
+                      {uploadBannerMutation.isPending ? 'Đang upload banner...' : 'Chọn ảnh banner'}
+                    </span>
+                    <span className="mt-1 text-xs font-bold text-muted">PNG, JPG, WEBP. Tối đa 5MB.</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadBannerMutation.isPending}
+                      onChange={(event) => handleBannerUpload(event.target.files)}
+                    />
+                  </label>
+                  {errors.banner_url?.message ? (
+                    <span className="mt-2 block text-sm font-bold text-berry">{errors.banner_url.message}</span>
+                  ) : null}
+                </div>
                 {bannerUrl ? (
-                  <div className="aspect-[16/9] overflow-hidden rounded-admin bg-cream ring-1 ring-berry/10">
+                  <div className="group relative aspect-[16/9] overflow-hidden rounded-admin bg-cream ring-1 ring-berry/10">
                     <img src={bannerUrl} alt="Banner voucher" className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink/85 text-white opacity-0 transition group-hover:opacity-100"
+                      onClick={() => setValue('banner_url', '', { shouldDirty: true, shouldValidate: true })}
+                      aria-label="Xóa banner voucher"
+                    >
+                      <AiOutlineClose />
+                    </button>
                   </div>
                 ) : (
                   <div className="rounded-admin border border-dashed border-berry/20 bg-cream px-4 py-8 text-center text-sm font-bold text-muted">

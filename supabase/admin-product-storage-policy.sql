@@ -6,6 +6,7 @@
 --
 -- Admin web uploads product images to:
 -- Products/products/<file-name>
+-- Products/vouchers/<file-name>
 
 create schema if not exists private;
 
@@ -55,5 +56,32 @@ create policy "products_admin_images_update"
   with check (
     bucket_id = 'Products'
     and name like 'products/%'
+    and private.is_admin()
+  );
+
+drop policy if exists "vouchers_admin_banners_upload" on storage.objects;
+create policy "vouchers_admin_banners_upload"
+  on storage.objects
+  for insert
+  to authenticated
+  with check (
+    bucket_id = 'Products'
+    and name like 'vouchers/%'
+    and private.is_admin()
+  );
+
+drop policy if exists "vouchers_admin_banners_update" on storage.objects;
+create policy "vouchers_admin_banners_update"
+  on storage.objects
+  for update
+  to authenticated
+  using (
+    bucket_id = 'Products'
+    and name like 'vouchers/%'
+    and private.is_admin()
+  )
+  with check (
+    bucket_id = 'Products'
+    and name like 'vouchers/%'
     and private.is_admin()
   );
