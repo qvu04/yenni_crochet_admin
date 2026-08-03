@@ -28,3 +28,9 @@ select,
 textarea {
   font: inherit;
 }
+
+@layer components {
+  .admin-input {
+    @apply h-11 w-full rounded-admin border border-berry/15 bg-cream px-4 text-sm font-bold text-ink outline-none transition placeholder:text-muted/70 focus:border-berry;
+  }
+}

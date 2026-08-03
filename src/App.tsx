@@ -1,10 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { AdminLayout } from './layouts/AdminLayout'
-import { CustomRequestsPage } from './pages/CustomRequestsPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { LoginPage } from './pages/LoginPage'
-import { OrdersPage } from './pages/OrdersPage'
-import { ProductsPage } from './pages/ProductsPage'
+import { AdminLayout } from './components/Layout'
+import {
+  CustomRequestsPage,
+  DashboardPage,
+  LoginPage,
+  OrdersPage,
+  ProductsPage,
+} from './pages'
 
 function App() {
   return (

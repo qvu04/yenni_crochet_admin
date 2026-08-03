@@ -1,0 +1,5 @@
+export { ProductFilters } from './ProductFilters'
+export { ProductFormDialog } from './ProductFormDialog'
+export { ProductMetric } from './ProductMetric'
+export { ProductThumbnail } from './ProductThumbnail'
+export { ProductsTable } from './ProductsTable'
