@@ -1,5 +1,6 @@
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
+  AiOutlineCalendar,
   AiOutlineGift,
   AiOutlineInbox,
   AiOutlineLoading3Quarters,
@@ -16,6 +17,7 @@ const navigation = [
   { label: 'Đơn hàng', href: '/orders', icon: <AiOutlineShoppingCart /> },
   { label: 'Sản phẩm', href: '/products', icon: <AiOutlineGift /> },
   { label: 'Ưu đãi', href: '/vouchers', icon: <AiOutlineTag /> },
+  { label: 'Campaign', href: '/campaigns', icon: <AiOutlineCalendar /> },
   { label: 'Đặt riêng', href: '/custom-requests', icon: <AiOutlineInbox /> },
 ] as const
 

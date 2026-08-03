@@ -1,4 +1,5 @@
 export * from './auth'
+export * from './campaigns'
 export * from './custom-requests'
 export * from './dashboard'
 export * from './orders'

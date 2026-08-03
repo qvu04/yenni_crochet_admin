@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './components/Layout'
 import {
   CustomRequestsPage,
+  CampaignsPage,
   DashboardPage,
   LoginPage,
   OrdersPage,
@@ -18,6 +19,7 @@ function App() {
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/vouchers" element={<VouchersPage />} />
+        <Route path="/campaigns" element={<CampaignsPage />} />
         <Route path="/custom-requests" element={<CustomRequestsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
