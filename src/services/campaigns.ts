@@ -2,6 +2,10 @@ import type { CampaignFormValues } from '../schemas'
 import type { Product } from './products'
 import { supabase } from './supabase'
 
+const CAMPAIGN_STORAGE_BUCKET = 'Products'
+const CAMPAIGN_IMAGES_FOLDER = 'campaigns'
+const MAX_CAMPAIGN_IMAGE_SIZE = 5 * 1024 * 1024
+
 export type CampaignType = 'collection' | 'event' | 'promotion'
 export type CampaignCtaAction = 'products' | 'contact' | 'custom_request'
 export type CampaignStatusFilter = 'all' | 'active' | 'inactive' | 'current' | 'upcoming' | 'ended'
@@ -46,6 +50,11 @@ const CAMPAIGN_SELECT = `
 `
 
 const normalizeSearchTerm = (value: string) => value.trim().replace(/[,%()]/g, ' ').replace(/\s+/g, ' ')
+
+const getFileExtension = (fileName: string) => {
+  const extension = fileName.split('.').pop()?.toLowerCase()
+  return extension || 'jpg'
+}
 
 const toNullableIsoString = (value?: string) => (value ? new Date(value).toISOString() : null)
 
@@ -184,6 +193,29 @@ export const campaignServices = {
     if (error) {
       throw new Error(error.message)
     }
+  },
+
+  uploadCampaignImage: async (file: File): Promise<string> => {
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Chỉ hỗ trợ tải ảnh campaign.')
+    }
+
+    if (file.size > MAX_CAMPAIGN_IMAGE_SIZE) {
+      throw new Error('Ảnh campaign tối đa 5MB.')
+    }
+
+    const path = `${CAMPAIGN_IMAGES_FOLDER}/${Date.now()}-${crypto.randomUUID()}.${getFileExtension(file.name)}`
+    const { error } = await supabase.storage.from(CAMPAIGN_STORAGE_BUCKET).upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    const { data } = supabase.storage.from(CAMPAIGN_STORAGE_BUCKET).getPublicUrl(path)
+    return data.publicUrl
   },
 
   toCampaignFormValues: (campaign: Campaign): CampaignFormValues => ({

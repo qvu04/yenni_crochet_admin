@@ -1,9 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
-import { AiOutlineLoading3Quarters, AiOutlinePicture } from 'react-icons/ai'
+import { AiOutlineClose, AiOutlineCloudUpload, AiOutlineLoading3Quarters, AiOutlinePicture } from 'react-icons/ai'
 import { ActionNotice, Button, SegmentedControl } from '../../../components/ui'
-import { useCreateCampaignMutation, useProductsQuery, useUpdateCampaignMutation } from '../../../queries'
+import {
+  useCreateCampaignMutation,
+  useProductsQuery,
+  useUpdateCampaignMutation,
+  useUploadCampaignImageMutation,
+} from '../../../queries'
 import { campaignFormSchema, type CampaignFormValues } from '../../../schemas'
 import { campaignServices, type Campaign } from '../../../services'
 import {
@@ -24,6 +29,8 @@ interface CampaignFormDialogProps {
 export const CampaignFormDialog = ({ campaign, onClose, onSaved }: CampaignFormDialogProps) => {
   const createMutation = useCreateCampaignMutation()
   const updateMutation = useUpdateCampaignMutation()
+  const uploadBannerMutation = useUploadCampaignImageMutation()
+  const uploadDetailImageMutation = useUploadCampaignImageMutation()
   const productsQuery = useProductsQuery({ type: 'all' })
   const isEditing = Boolean(campaign)
   const {
@@ -42,8 +49,13 @@ export const CampaignFormDialog = ({ campaign, onClose, onSaved }: CampaignFormD
   const bannerUrl = watch('banner_url')
   const detailImageUrl = watch('detail_image_url')
   const selectedProductIds = watch('product_ids')
-  const isSubmitting = createMutation.isPending || updateMutation.isPending
-  const submitError = createMutation.error?.message || updateMutation.error?.message
+  const isUploadingImage = uploadBannerMutation.isPending || uploadDetailImageMutation.isPending
+  const isSubmitting = createMutation.isPending || updateMutation.isPending || isUploadingImage
+  const submitError =
+    createMutation.error?.message ||
+    updateMutation.error?.message ||
+    uploadBannerMutation.error?.message ||
+    uploadDetailImageMutation.error?.message
   const products = productsQuery.data ?? []
 
   useEffect(() => {
@@ -58,6 +70,21 @@ export const CampaignFormDialog = ({ campaign, onClose, onSaved }: CampaignFormD
         : [...selectedProductIds, productId],
       { shouldDirty: true, shouldValidate: true },
     )
+  }
+
+  const handleImageUpload = (
+    files: FileList | null,
+    fieldName: 'banner_url' | 'detail_image_url',
+  ) => {
+    const file = files?.[0]
+    if (!file) return
+
+    const uploadMutation = fieldName === 'banner_url' ? uploadBannerMutation : uploadDetailImageMutation
+    uploadMutation.mutate(file, {
+      onSuccess: (url) => {
+        setValue(fieldName, url, { shouldDirty: true, shouldValidate: true })
+      },
+    })
   }
 
   const onSubmit = (values: CampaignFormValues) => {
@@ -169,14 +196,25 @@ export const CampaignFormDialog = ({ campaign, onClose, onSaved }: CampaignFormD
 
             <div className="space-y-5">
               <CampaignFormSection title="Hình ảnh">
-                <CampaignFormField label="Banner URL" error={errors.banner_url?.message}>
-                  <input {...register('banner_url')} className="admin-input" placeholder="https://..." />
-                </CampaignFormField>
-                <CampaignFormField label="Ảnh chi tiết URL" error={errors.detail_image_url?.message}>
-                  <input {...register('detail_image_url')} className="admin-input" placeholder="Có thể để trống" />
-                </CampaignFormField>
-                <ImagePreview title="Banner" imageUrl={bannerUrl} />
-                <ImagePreview title="Ảnh chi tiết" imageUrl={detailImageUrl} />
+                <ImageUploader
+                  title="Banner trang chủ"
+                  imageUrl={bannerUrl}
+                  error={errors.banner_url?.message}
+                  isUploading={uploadBannerMutation.isPending}
+                  required
+                  onUpload={(files) => handleImageUpload(files, 'banner_url')}
+                  onRemove={() => setValue('banner_url', '', { shouldDirty: true, shouldValidate: true })}
+                  registerInput={<input type="hidden" {...register('banner_url')} />}
+                />
+                <ImageUploader
+                  title="Ảnh chi tiết"
+                  imageUrl={detailImageUrl}
+                  error={errors.detail_image_url?.message}
+                  isUploading={uploadDetailImageMutation.isPending}
+                  onUpload={(files) => handleImageUpload(files, 'detail_image_url')}
+                  onRemove={() => setValue('detail_image_url', '', { shouldDirty: true, shouldValidate: true })}
+                  registerInput={<input type="hidden" {...register('detail_image_url')} />}
+                />
               </CampaignFormSection>
 
               <CampaignFormSection title="Sản phẩm trong campaign">
@@ -230,15 +268,52 @@ export const CampaignFormDialog = ({ campaign, onClose, onSaved }: CampaignFormD
   )
 }
 
-const ImagePreview = ({ title, imageUrl }: { title: string; imageUrl?: string }) => (
+const ImageUploader = ({
+  title,
+  imageUrl,
+  error,
+  isUploading,
+  required,
+  onUpload,
+  onRemove,
+  registerInput,
+}: {
+  title: string
+  imageUrl?: string
+  error?: string
+  isUploading: boolean
+  required?: boolean
+  onUpload: (files: FileList | null) => void
+  onRemove: () => void
+  registerInput: ReactNode
+}) => (
   <div>
-    <p className="mb-2 text-xs font-bold uppercase text-muted">{title}</p>
+    <p className="mb-2 text-sm font-bold text-cocoa">
+      {title}
+      {required ? <span className="text-berry"> *</span> : null}
+    </p>
+    {registerInput}
+    <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-admin border border-dashed border-berry/25 bg-cream px-4 py-6 text-center transition hover:border-berry">
+      <AiOutlineCloudUpload className="text-3xl text-berry" />
+      <span className="mt-2 text-sm font-black text-ink">{isUploading ? 'Đang upload ảnh...' : 'Chọn ảnh'}</span>
+      <span className="mt-1 text-xs font-bold text-muted">PNG, JPG, WEBP. Tối đa 5MB.</span>
+      <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={(event) => onUpload(event.target.files)} />
+    </label>
+    {error ? <span className="mt-2 block text-sm font-bold text-berry">{error}</span> : null}
     {imageUrl ? (
-      <div className="aspect-[16/9] overflow-hidden rounded-admin bg-cream ring-1 ring-berry/10">
+      <div className="group relative mt-3 aspect-[16/9] overflow-hidden rounded-admin bg-cream ring-1 ring-berry/10">
         <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
+        <button
+          type="button"
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink/85 text-white opacity-0 transition group-hover:opacity-100"
+          onClick={onRemove}
+          aria-label={`Xóa ${title}`}
+        >
+          <AiOutlineClose />
+        </button>
       </div>
     ) : (
-      <div className="flex aspect-[16/9] items-center justify-center rounded-admin border border-dashed border-berry/20 bg-cream text-3xl text-berry">
+      <div className="mt-3 flex aspect-[16/9] items-center justify-center rounded-admin border border-dashed border-berry/20 bg-cream text-3xl text-berry">
         <AiOutlinePicture />
       </div>
     )}

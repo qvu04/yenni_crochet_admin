@@ -49,3 +49,8 @@ export const useCampaignActiveMutation = () => {
     onSuccess: () => invalidateCampaigns(queryClient),
   })
 }
+
+export const useUploadCampaignImageMutation = () =>
+  useMutation({
+    mutationFn: (file: File) => campaignServices.uploadCampaignImage(file),
+  })
