@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
 export type DashboardOrderStatus = 'pending' | 'confirmed' | 'done' | 'cancelled'
-export type CustomRequestStatus = 'pending' | 'contacted' | 'completed' | 'cancelled'
+export type DashboardCustomRequestStatus = 'pending' | 'contacted' | 'completed' | 'cancelled'
 
 export interface DashboardOrderItem {
   id: string
@@ -33,7 +33,7 @@ export interface DashboardCustomRequest {
   description: string | null
   occasion: string | null
   quantity: number | null
-  status: CustomRequestStatus
+  status: DashboardCustomRequestStatus
   created_at: string
 }
 

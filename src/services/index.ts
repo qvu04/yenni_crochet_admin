@@ -1,5 +1,6 @@
 export * from './account-preferences'
 export * from './auth'
+export * from './custom-requests'
 export * from './dashboard'
 export * from './orders'
 export * from './products'
