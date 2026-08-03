@@ -3,6 +3,7 @@ import { AdminLayout } from './components/Layout'
 import {
   CustomRequestsPage,
   CampaignsPage,
+  CustomersPage,
   DashboardPage,
   LoginPage,
   OrdersPage,
@@ -18,6 +19,7 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
         <Route path="/vouchers" element={<VouchersPage />} />
         <Route path="/campaigns" element={<CampaignsPage />} />
         <Route path="/custom-requests" element={<CustomRequestsPage />} />

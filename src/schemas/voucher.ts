@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const promotionDiscountTypeSchema = z.enum(['percent', 'fixed', 'free_shipping'])
+export const promotionVisibilitySchema = z.enum(['public', 'private'])
 
 const nullableNumberSchema = z.number().int().min(0).nullable()
 
@@ -9,6 +10,7 @@ export const promotionFormSchema = z
     title: z.string().trim().min(1, 'Tên voucher là bắt buộc'),
     code: z.string().trim().min(2, 'Mã voucher tối thiểu 2 ký tự'),
     description: z.string().trim().optional(),
+    visibility: promotionVisibilitySchema,
     discount_type: promotionDiscountTypeSchema,
     discount_value: z.coerce.number().int().min(0, 'Giá trị giảm không hợp lệ'),
     min_order_value: nullableNumberSchema,
@@ -32,3 +34,4 @@ export const promotionFormSchema = z
 
 export type PromotionFormValues = z.infer<typeof promotionFormSchema>
 export type PromotionDiscountType = z.infer<typeof promotionDiscountTypeSchema>
+export type PromotionVisibility = z.infer<typeof promotionVisibilitySchema>

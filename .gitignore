@@ -13,6 +13,11 @@ dist-ssr
 www
 *.local
 .env
+# Schema/RLS chứa cấu trúc database — không public
+supabase/admin-product-storage-policy.sql
+supabase/customer-voucher-constraints.sql
+supabase/private-voucher-visibility.sql
+supabase/public-voucher-claim-limit.sql
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

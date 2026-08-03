@@ -13,6 +13,7 @@ import {
   getPromotionClaimedCount,
   getPromotionStatus,
   getPromotionUsedCount,
+  promotionVisibilityLabels,
 } from '../../../utils'
 
 interface VouchersTableProps {
@@ -73,9 +74,10 @@ export const VouchersTable = ({
         <thead className="bg-cream text-xs uppercase text-muted">
           <tr>
             <th className="px-4 py-3">Voucher</th>
+            <th className="px-4 py-3">Phạm vi</th>
             <th className="px-4 py-3">Giảm giá</th>
             <th className="px-4 py-3">Điều kiện</th>
-            <th className="px-4 py-3">Lượt dùng</th>
+            <th className="px-4 py-3">Lượt nhận</th>
             <th className="px-4 py-3">Thời gian</th>
             <th className="px-4 py-3">Trạng thái</th>
             <th className="px-4 py-3 text-right">Thao tác</th>
@@ -86,6 +88,7 @@ export const VouchersTable = ({
             const status = getPromotionStatus(promotion)
             const usedCount = getPromotionUsedCount(promotion)
             const claimedCount = getPromotionClaimedCount(promotion)
+            const visibility = promotion.visibility ?? 'private'
 
             return (
               <tr
@@ -113,6 +116,11 @@ export const VouchersTable = ({
                     </div>
                   </div>
                 </td>
+                <td className="px-4 py-4">
+                  <Badge tone={visibility === 'private' ? 'info' : 'warning'}>
+                    {promotionVisibilityLabels[visibility]}
+                  </Badge>
+                </td>
                 <td className="px-4 py-4 font-black text-ink">{formatPromotionDiscount(promotion)}</td>
                 <td className="px-4 py-4 text-muted">
                   <p>{promotion.min_order_value ? `Đơn từ ${promotion.min_order_value.toLocaleString('vi-VN')}đ` : 'Không giới hạn tối thiểu'}</p>
@@ -122,9 +130,9 @@ export const VouchersTable = ({
                 </td>
                 <td className="px-4 py-4 text-muted">
                   <p className="font-black text-ink">
-                    {usedCount}/{promotion.usage_limit ?? '∞'}
+                    {claimedCount}/{promotion.usage_limit ?? '∞'}
                   </p>
-                  <p className="mt-1 text-xs font-bold">{claimedCount} lượt đổi</p>
+                  <p className="mt-1 text-xs font-bold">{usedCount} đã dùng</p>
                 </td>
                 <td className="px-4 py-4 text-muted">
                   {formatDate(promotion.start_date)} - {formatDate(promotion.end_date)}

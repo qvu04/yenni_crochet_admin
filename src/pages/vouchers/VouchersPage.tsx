@@ -3,13 +3,13 @@ import { AiOutlinePlus } from 'react-icons/ai'
 import { useSearchParams } from 'react-router-dom'
 import { ActionNotice, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
 import { usePromotionActiveMutation, usePromotionsQuery } from '../../queries'
-import type { Promotion, PromotionFilter } from '../../services'
+import type { Promotion, PromotionFilter, PromotionVisibilityFilter } from '../../services'
 import {
   formatPromotionDiscount,
   getPromotionClaimedCount,
   getPromotionStatus,
-  getPromotionUsedCount,
   normalizePromotionFilter,
+  normalizePromotionVisibility,
 } from '../../utils'
 import { VoucherFilters, VoucherFormDialog, VoucherMetric, VouchersTable } from './components'
 
@@ -25,12 +25,13 @@ interface SavedPromotionNotice {
 export const VouchersPage = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const status = normalizePromotionFilter(searchParams.get('status'))
+  const visibility = normalizePromotionVisibility(searchParams.get('visibility'))
   const search = searchParams.get('q') ?? ''
   const [searchInput, setSearchInput] = useState(search)
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [savedNotice, setSavedNotice] = useState<SavedPromotionNotice | null>(null)
-  const promotionsQuery = usePromotionsQuery({ search, status })
+  const promotionsQuery = usePromotionsQuery({ search, status, visibility })
   const activeMutation = usePromotionActiveMutation()
 
   useEffect(() => {
@@ -42,12 +43,12 @@ export const VouchersPage = () => {
     () => promotions.filter((promotion) => getPromotionStatus(promotion).label === 'Đang chạy'),
     [promotions],
   )
-  const totalClaimed = useMemo(
-    () => promotions.reduce((total, promotion) => total + getPromotionClaimedCount(promotion), 0),
+  const privatePromotions = useMemo(
+    () => promotions.filter((promotion) => (promotion.visibility ?? 'private') === 'private'),
     [promotions],
   )
-  const totalUsed = useMemo(
-    () => promotions.reduce((total, promotion) => total + getPromotionUsedCount(promotion), 0),
+  const totalClaimed = useMemo(
+    () => promotions.reduce((total, promotion) => total + getPromotionClaimedCount(promotion), 0),
     [promotions],
   )
   const visiblePromotionIds = useMemo(() => new Set(promotions.map((promotion) => promotion.id)), [promotions])
@@ -75,10 +76,11 @@ export const VouchersPage = () => {
     }
   }, [savedNotice, visiblePromotionIds])
 
-  const updateFilters = (nextValues: { q?: string; status?: PromotionFilter }) => {
+  const updateFilters = (nextValues: { q?: string; status?: PromotionFilter; visibility?: PromotionVisibilityFilter }) => {
     const nextParams = new URLSearchParams(searchParams)
     const nextSearch = nextValues.q ?? search
     const nextStatus = nextValues.status ?? status
+    const nextVisibility = nextValues.visibility ?? visibility
 
     if (nextSearch.trim()) {
       nextParams.set('q', nextSearch.trim())
@@ -90,6 +92,12 @@ export const VouchersPage = () => {
       nextParams.set('status', nextStatus)
     } else {
       nextParams.delete('status')
+    }
+
+    if (nextVisibility !== 'all') {
+      nextParams.set('visibility', nextVisibility)
+    } else {
+      nextParams.delete('visibility')
     }
 
     setSearchParams(nextParams)
@@ -141,8 +149,8 @@ export const VouchersPage = () => {
       <section className="grid gap-4 md:grid-cols-4">
         <VoucherMetric label="Tổng voucher" value={promotions.length} />
         <VoucherMetric label="Đang chạy" value={currentPromotions.length} />
-        <VoucherMetric label="Lượt đổi" value={totalClaimed} />
-        <VoucherMetric label="Lượt dùng" value={totalUsed} />
+        <VoucherMetric label="Riêng tư" value={privatePromotions.length} />
+        <VoucherMetric label="Lượt nhận" value={totalClaimed} />
       </section>
 
       {savedNotice ? (
@@ -175,9 +183,11 @@ export const VouchersPage = () => {
           <VoucherFilters
             searchInput={searchInput}
             status={status}
+            visibility={visibility}
             onSearchInputChange={setSearchInput}
             onSubmitSearch={() => updateFilters({ q: searchInput })}
             onStatusChange={(value) => updateFilters({ status: value })}
+            onVisibilityChange={(value) => updateFilters({ visibility: value })}
           />
         </CardHeader>
         <CardContent>

@@ -6,7 +6,7 @@ import { ActionNotice, Button, SegmentedControl } from '../../../components/ui'
 import { useCreatePromotionMutation, useUpdatePromotionMutation, useUploadPromotionBannerMutation } from '../../../queries'
 import { promotionFormSchema, type PromotionFormValues } from '../../../schemas'
 import { voucherServices, type Promotion } from '../../../services'
-import { defaultPromotionValues, promotionDiscountTypeOptions } from '../../../utils'
+import { defaultPromotionValues, promotionDiscountTypeOptions, promotionVisibilityOptions } from '../../../utils'
 import { VoucherFormField, VoucherFormSection, VoucherToggleField } from './VoucherFormFields'
 
 interface VoucherFormDialogProps {
@@ -32,6 +32,7 @@ export const VoucherFormDialog = ({ promotion, onClose, onSaved }: VoucherFormDi
     defaultValues: promotion ? voucherServices.toPromotionFormValues(promotion) : defaultPromotionValues,
   })
   const discountType = watch('discount_type')
+  const visibility = watch('visibility')
   const bannerUrl = watch('banner_url')
   const isSubmitting = createMutation.isPending || updateMutation.isPending || uploadBannerMutation.isPending
   const submitError = createMutation.error?.message || updateMutation.error?.message || uploadBannerMutation.error?.message
@@ -116,6 +117,14 @@ export const VoucherFormDialog = ({ promotion, onClose, onSaved }: VoucherFormDi
                     placeholder="Mô tả ngắn hiển thị trong tab Ưu đãi."
                   />
                 </VoucherFormField>
+                <div>
+                  <p className="mb-2 text-sm font-bold text-cocoa">Phạm vi hiển thị</p>
+                  <SegmentedControl
+                    value={visibility}
+                    options={promotionVisibilityOptions}
+                    onValueChange={(value) => setValue('visibility', value, { shouldDirty: true, shouldValidate: true })}
+                  />
+                </div>
                 <VoucherToggleField label="Đang bật voucher" {...register('is_active')} />
               </VoucherFormSection>
 
@@ -162,7 +171,7 @@ export const VoucherFormDialog = ({ promotion, onClose, onSaved }: VoucherFormDi
                     <input {...register('end_date')} type="date" className="admin-input" />
                   </VoucherFormField>
                 </div>
-                <VoucherFormField label="Giới hạn lượt dùng" error={errors.usage_limit?.message}>
+                <VoucherFormField label="Giới hạn lượt nhận" error={errors.usage_limit?.message}>
                   <input {...register('usage_limit', nullableNumberRegisterOptions)} type="number" min={0} className="admin-input" placeholder="Bỏ trống nếu không giới hạn" />
                 </VoucherFormField>
               </VoucherFormSection>

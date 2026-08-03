@@ -6,7 +6,9 @@ const PROMOTION_BANNERS_FOLDER = 'vouchers'
 const MAX_PROMOTION_BANNER_SIZE = 5 * 1024 * 1024
 
 export type PromotionDiscountType = 'percent' | 'fixed' | 'free_shipping'
+export type PromotionVisibility = 'public' | 'private'
 export type PromotionFilter = 'all' | 'active' | 'inactive' | 'current' | 'upcoming' | 'expired'
+export type PromotionVisibilityFilter = 'all' | PromotionVisibility
 export type UserPromotionStatus = 'claimed' | 'used' | 'expired'
 
 export interface UserPromotion {
@@ -24,6 +26,7 @@ export interface Promotion {
   id: string
   title: string
   description: string | null
+  visibility: PromotionVisibility
   code: string
   discount_type: PromotionDiscountType
   discount_value: number
@@ -44,6 +47,7 @@ export interface Promotion {
 export interface PromotionFilters {
   search?: string
   status?: PromotionFilter
+  visibility?: PromotionVisibilityFilter
 }
 
 const PROMOTION_SELECT = `
@@ -62,6 +66,7 @@ const toPromotionPayload = (values: PromotionFormValues) => ({
   title: values.title.trim(),
   code: values.code.trim().toUpperCase(),
   description: values.description?.trim() || null,
+  visibility: values.visibility,
   discount_type: values.discount_type,
   discount_value: values.discount_type === 'free_shipping' ? 0 : values.discount_value,
   min_order_value: values.min_order_value,
@@ -76,7 +81,7 @@ const toPromotionPayload = (values: PromotionFormValues) => ({
 })
 
 export const voucherServices = {
-  getPromotions: async ({ search, status = 'all' }: PromotionFilters): Promise<Promotion[]> => {
+  getPromotions: async ({ search, status = 'all', visibility = 'all' }: PromotionFilters): Promise<Promotion[]> => {
     const today = new Date().toISOString().slice(0, 10)
     let query = supabase.from('promotions').select(PROMOTION_SELECT).order('created_at', { ascending: false })
 
@@ -97,6 +102,10 @@ export const voucherServices = {
       query = query.gte('start_date', today)
     } else if (status === 'expired') {
       query = query.lt('end_date', today)
+    }
+
+    if (visibility !== 'all') {
+      query = query.eq('visibility', visibility)
     }
 
     const { data, error } = await query
@@ -172,6 +181,7 @@ export const voucherServices = {
     title: promotion.title,
     code: promotion.code,
     description: promotion.description ?? '',
+    visibility: promotion.visibility ?? 'private',
     discount_type: promotion.discount_type,
     discount_value: promotion.discount_value,
     min_order_value: promotion.min_order_value,

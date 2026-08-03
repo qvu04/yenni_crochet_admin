@@ -1,4 +1,10 @@
-import type { Promotion, PromotionDiscountType, PromotionFilter } from '../services'
+import type {
+  Promotion,
+  PromotionDiscountType,
+  PromotionFilter,
+  PromotionVisibility,
+  PromotionVisibilityFilter,
+} from '../services'
 import { formatCurrency } from './common'
 
 export const promotionFilterOptions: Array<{ label: string; value: PromotionFilter }> = [
@@ -16,16 +22,33 @@ export const promotionDiscountTypeOptions: Array<{ label: string; value: Promoti
   { label: 'Miễn ship', value: 'free_shipping' },
 ]
 
+export const promotionVisibilityOptions: Array<{ label: string; value: PromotionVisibility }> = [
+  { label: 'Riêng tư', value: 'private' },
+  { label: 'Công khai', value: 'public' },
+]
+
+export const promotionVisibilityFilterOptions: Array<{ label: string; value: PromotionVisibilityFilter }> = [
+  { label: 'Tất cả', value: 'all' },
+  { label: 'Riêng tư', value: 'private' },
+  { label: 'Công khai', value: 'public' },
+]
+
 export const promotionDiscountTypeLabels: Record<PromotionDiscountType, string> = {
   percent: 'Phần trăm',
   fixed: 'Số tiền',
   free_shipping: 'Miễn ship',
 }
 
+export const promotionVisibilityLabels: Record<PromotionVisibility, string> = {
+  private: 'Riêng tư',
+  public: 'Công khai',
+}
+
 export const defaultPromotionValues = {
   title: '',
   code: '',
   description: '',
+  visibility: 'private' as PromotionVisibility,
   discount_type: 'percent' as PromotionDiscountType,
   discount_value: 10,
   min_order_value: null,
@@ -47,6 +70,9 @@ export const normalizePromotionFilter = (value: string | null): PromotionFilter 
   value === 'expired'
     ? value
     : 'all'
+
+export const normalizePromotionVisibility = (value: string | null): PromotionVisibilityFilter =>
+  value === 'public' || value === 'private' ? value : 'all'
 
 export const getPromotionStatus = (promotion: Promotion) => {
   const today = new Date().toISOString().slice(0, 10)
