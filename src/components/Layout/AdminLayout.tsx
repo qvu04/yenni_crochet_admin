@@ -5,6 +5,7 @@ import {
   AiOutlineLoading3Quarters,
   AiOutlinePieChart,
   AiOutlineShoppingCart,
+  AiOutlineTag,
 } from 'react-icons/ai'
 import shopImg from '../../assets/shop.png'
 import { useLogoutMutation } from '../../queries'
@@ -14,6 +15,7 @@ const navigation = [
   { label: 'Tổng quan', href: '/', icon: <AiOutlinePieChart /> },
   { label: 'Đơn hàng', href: '/orders', icon: <AiOutlineShoppingCart /> },
   { label: 'Sản phẩm', href: '/products', icon: <AiOutlineGift /> },
+  { label: 'Ưu đãi', href: '/vouchers', icon: <AiOutlineTag /> },
   { label: 'Đặt riêng', href: '/custom-requests', icon: <AiOutlineInbox /> },
 ] as const
 

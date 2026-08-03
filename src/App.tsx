@@ -6,6 +6,7 @@ import {
   LoginPage,
   OrdersPage,
   ProductsPage,
+  VouchersPage,
 } from './pages'
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/vouchers" element={<VouchersPage />} />
         <Route path="/custom-requests" element={<CustomRequestsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
