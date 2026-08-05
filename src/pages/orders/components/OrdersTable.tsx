@@ -4,10 +4,12 @@ import type { Order } from '../../../services'
 import {
   formatCurrency,
   formatDateTime,
+  getOrderDepositAmount,
   getOrderItemsSummary,
+  getOrderRemainingAmount,
+  getOrderStatusLabel,
   getOrderStatusTone,
   getOrderTotal,
-  orderStatusLabels,
 } from '../../../utils'
 
 interface OrdersTableProps {
@@ -65,7 +67,7 @@ export const OrdersTable = ({
           <tr>
             <th className="px-4 py-3">Khách hàng</th>
             <th className="px-4 py-3">Sản phẩm</th>
-            <th className="px-4 py-3">Tổng tiền</th>
+            <th className="px-4 py-3">Thanh toán</th>
             <th className="px-4 py-3">Trạng thái</th>
             <th className="px-4 py-3">Ngày tạo</th>
             <th className="px-4 py-3 text-right">Thao tác</th>
@@ -86,10 +88,17 @@ export const OrdersTable = ({
                 <p className="truncate">{getOrderItemsSummary(order)}</p>
                 <p className="mt-1 text-xs font-bold text-muted">{order.quantity} sản phẩm</p>
               </td>
-              <td className="px-4 py-4 font-black text-ink">{formatCurrency(getOrderTotal(order))}</td>
+              <td className="px-4 py-4">
+                <p className="font-black text-ink">{formatCurrency(getOrderTotal(order))}</p>
+                {getOrderDepositAmount(order) > 0 ? (
+                  <p className="mt-1 text-xs font-bold text-muted">
+                    Cọc {formatCurrency(getOrderDepositAmount(order))} · Còn {formatCurrency(getOrderRemainingAmount(order))}
+                  </p>
+                ) : null}
+              </td>
               <td className="px-4 py-4">
                 <div className="flex items-center gap-2">
-                  <Badge tone={getOrderStatusTone(order.status)}>{orderStatusLabels[order.status]}</Badge>
+                  <Badge tone={getOrderStatusTone(order)}>{getOrderStatusLabel(order)}</Badge>
                   {order.id === highlightedOrderId ? <Badge tone="success">Vừa lưu</Badge> : null}
                 </div>
               </td>

@@ -4,6 +4,7 @@ export const promotionDiscountTypeSchema = z.enum(['percent', 'fixed', 'free_shi
 export const promotionVisibilitySchema = z.enum(['public', 'private'])
 
 const nullableNumberSchema = z.number().int().min(0).nullable()
+const nullablePositiveNumberSchema = z.number().int().min(1, 'Giới hạn lượt nhận phải từ 1 trở lên').nullable()
 
 export const promotionFormSchema = z
   .object({
@@ -20,7 +21,7 @@ export const promotionFormSchema = z
     campaign_id: z.string().trim().optional(),
     start_date: z.string().trim().min(1, 'Ngày bắt đầu là bắt buộc'),
     end_date: z.string().trim().min(1, 'Ngày kết thúc là bắt buộc'),
-    usage_limit: nullableNumberSchema,
+    usage_limit: nullablePositiveNumberSchema,
     is_active: z.boolean(),
   })
   .refine((values) => new Date(values.end_date) >= new Date(values.start_date), {

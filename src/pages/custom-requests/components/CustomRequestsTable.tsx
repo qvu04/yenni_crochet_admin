@@ -3,7 +3,9 @@ import { Badge, Button } from '../../../components/ui'
 import type { CustomRequest } from '../../../services'
 import {
   customRequestStatusLabels,
+  formatDate,
   formatDateTime,
+  getCustomRequestBudgetLabel,
   getCustomRequestOccasionLabel,
   getCustomRequestStatusTone,
 } from '../../../utils'
@@ -58,12 +60,13 @@ export const CustomRequestsTable = ({
 
   return (
     <div className="overflow-x-auto rounded-admin border border-berry/10">
-      <table className="w-full min-w-[980px] text-left text-sm">
+      <table className="w-full min-w-[1100px] text-left text-sm">
         <thead className="bg-cream text-xs uppercase text-muted">
           <tr>
             <th className="px-4 py-3">Khách hàng</th>
             <th className="px-4 py-3">Yêu cầu</th>
             <th className="px-4 py-3">Dịp</th>
+            <th className="px-4 py-3">Ngân sách</th>
             <th className="px-4 py-3">Số lượng</th>
             <th className="px-4 py-3">Trạng thái</th>
             <th className="px-4 py-3">Ngày gửi</th>
@@ -87,7 +90,13 @@ export const CustomRequestsTable = ({
                   {(request.reference_images ?? []).length} ảnh tham khảo
                 </p>
               </td>
-              <td className="px-4 py-4 text-muted">{getCustomRequestOccasionLabel(request)}</td>
+              <td className="px-4 py-4 text-muted">
+                <p>{getCustomRequestOccasionLabel(request)}</p>
+                {request.expected_date ? (
+                  <p className="mt-1 text-xs font-bold text-muted">Cần trước {formatDate(request.expected_date)}</p>
+                ) : null}
+              </td>
+              <td className="px-4 py-4 text-muted">{getCustomRequestBudgetLabel(request)}</td>
               <td className="px-4 py-4 font-black text-ink">{request.quantity}</td>
               <td className="px-4 py-4">
                 <div className="flex items-center gap-2">

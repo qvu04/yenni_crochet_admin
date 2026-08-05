@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import {
   AiOutlineClose,
@@ -45,12 +45,22 @@ export const ProductFormDialog = ({ product, onClose, onSaved }: ProductFormDial
   const variantsFieldArray = useFieldArray({ control, name: 'variants' })
   const images = watch('images')
   const selectedType = watch('product_type')
+  const variants = watch('variants')
+  const hasVariants = variants.length > 0
+  const totalVariantStock = variants
+    .filter((variant) => variant.is_active)
+    .reduce((total, variant) => total + Number(variant.stock_quantity || 0), 0)
   const isSubmitting = createMutation.isPending || updateMutation.isPending
   const submitError = createMutation.error?.message || updateMutation.error?.message || uploadMutation.error?.message
 
   useEffect(() => {
     reset(product ? productServices.toProductFormValues(product) : defaultProductValues)
   }, [product, reset])
+
+  useEffect(() => {
+    if (!hasVariants) return
+    setValue('stock_quantity', totalVariantStock, { shouldDirty: true, shouldValidate: true })
+  }, [hasVariants, setValue, totalVariantStock])
 
   const handleImageUpload = (files: FileList | null) => {
     const uploadFiles = Array.from(files ?? [])
@@ -124,8 +134,14 @@ export const ProductFormDialog = ({ product, onClose, onSaved }: ProductFormDial
                   <FormField label="Giá bán" error={errors.price?.message}>
                     <input {...register('price')} type="number" min={0} className="admin-input" />
                   </FormField>
-                  <FormField label="Tồn kho" error={errors.stock_quantity?.message}>
-                    <input {...register('stock_quantity')} type="number" min={0} className="admin-input" />
+                  <FormField label={hasVariants ? 'Tồn kho tổng' : 'Tồn kho'} error={errors.stock_quantity?.message}>
+                    <input
+                      {...register('stock_quantity')}
+                      type="number"
+                      min={0}
+                      disabled={hasVariants}
+                      className="admin-input disabled:cursor-not-allowed disabled:opacity-70"
+                    />
                   </FormField>
                   <FormField label="Thời gian làm" error={errors.estimated_days?.message}>
                     <input {...register('estimated_days')} className="admin-input" placeholder="5-7 ngày" />
@@ -149,18 +165,24 @@ export const ProductFormDialog = ({ product, onClose, onSaved }: ProductFormDial
                 <div className="space-y-3">
                   {priceTiersFieldArray.fields.map((field, index) => (
                     <div key={field.id} className="grid gap-3 rounded-admin border border-berry/10 bg-cream p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-                      <input {...register(`price_tiers.${index}.min_quantity`)} type="number" min={2} className="admin-input bg-white" placeholder="Từ" />
-                      <input
-                        {...register(`price_tiers.${index}.max_quantity`, {
-                          setValueAs: (value) => (value === '' ? null : Number(value)),
-                        })}
-                        type="number"
-                        min={2}
-                        className="admin-input bg-white"
-                        placeholder="Đến, bỏ trống nếu không giới hạn"
-                      />
-                      <input {...register(`price_tiers.${index}.unit_price`)} type="number" min={0} className="admin-input bg-white" placeholder="Đơn giá" />
-                      <div className="flex gap-2">
+                      <ProductNumberField label="Từ số lượng">
+                        <input {...register(`price_tiers.${index}.min_quantity`)} type="number" min={2} className="admin-input bg-white" />
+                      </ProductNumberField>
+                      <ProductNumberField label="Đến số lượng">
+                        <input
+                          {...register(`price_tiers.${index}.max_quantity`, {
+                            setValueAs: (value) => (value === '' ? null : Number(value)),
+                          })}
+                          type="number"
+                          min={2}
+                          className="admin-input bg-white"
+                          placeholder="Bỏ trống nếu không giới hạn"
+                        />
+                      </ProductNumberField>
+                      <ProductNumberField label="Đơn giá sỉ">
+                        <input {...register(`price_tiers.${index}.unit_price`)} type="number" min={0} className="admin-input bg-white" />
+                      </ProductNumberField>
+                      <div className="flex items-end gap-2">
                         <label className="flex h-11 items-center gap-2 rounded-admin bg-white px-3 text-xs font-bold text-cocoa ring-1 ring-berry/10">
                           <input type="checkbox" className="accent-berry" {...register(`price_tiers.${index}.is_active`)} />
                           Bật
@@ -185,19 +207,29 @@ export const ProductFormDialog = ({ product, onClose, onSaved }: ProductFormDial
                 <div className="space-y-3">
                   {variantsFieldArray.fields.map((field, index) => (
                     <div key={field.id} className="grid gap-3 rounded-admin border border-berry/10 bg-cream p-3 md:grid-cols-2">
-                      <input {...register(`variants.${index}.name`)} className="admin-input bg-white" placeholder="Tên phân loại, vd: Màu hồng" />
-                      <input {...register(`variants.${index}.color_name`)} className="admin-input bg-white" placeholder="Tên màu" />
-                      <input {...register(`variants.${index}.color_hex`)} className="admin-input bg-white" placeholder="#F8B7C1" />
-                      <input
-                        {...register(`variants.${index}.price`, {
-                          setValueAs: (value) => (value === '' ? null : Number(value)),
-                        })}
-                        type="number"
-                        min={0}
-                        className="admin-input bg-white"
-                        placeholder="Giá riêng, bỏ trống nếu dùng giá gốc"
-                      />
-                      <input {...register(`variants.${index}.stock_quantity`)} type="number" min={0} className="admin-input bg-white" placeholder="Tồn kho" />
+                      <ProductNumberField label="Tên phân loại">
+                        <input {...register(`variants.${index}.name`)} className="admin-input bg-white" placeholder="VD: Màu hồng" />
+                      </ProductNumberField>
+                      <ProductNumberField label="Tên màu">
+                        <input {...register(`variants.${index}.color_name`)} className="admin-input bg-white" placeholder="VD: Hồng pastel" />
+                      </ProductNumberField>
+                      <ProductNumberField label="Mã màu">
+                        <input {...register(`variants.${index}.color_hex`)} className="admin-input bg-white" placeholder="#F8B7C1" />
+                      </ProductNumberField>
+                      <ProductNumberField label="Giá riêng">
+                        <input
+                          {...register(`variants.${index}.price`, {
+                            setValueAs: (value) => (value === '' ? null : Number(value)),
+                          })}
+                          type="number"
+                          min={0}
+                          className="admin-input bg-white"
+                          placeholder="Bỏ trống nếu dùng giá gốc"
+                        />
+                      </ProductNumberField>
+                      <ProductNumberField label="Tồn kho phân loại">
+                        <input {...register(`variants.${index}.stock_quantity`)} type="number" min={0} className="admin-input bg-white" />
+                      </ProductNumberField>
                       <div className="flex gap-2">
                         <label className="flex h-11 flex-1 items-center gap-2 rounded-admin bg-white px-3 text-sm font-bold text-cocoa ring-1 ring-berry/10">
                           <input type="checkbox" className="accent-berry" {...register(`variants.${index}.is_active`)} />
@@ -278,3 +310,10 @@ export const ProductFormDialog = ({ product, onClose, onSaved }: ProductFormDial
     </div>
   )
 }
+
+const ProductNumberField = ({ label, children }: { label: string; children: ReactNode }) => (
+  <label className="space-y-1">
+    <span className="block text-xs font-black uppercase text-muted">{label}</span>
+    {children}
+  </label>
+)

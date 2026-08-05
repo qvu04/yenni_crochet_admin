@@ -41,6 +41,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [queryClient])
 
+  useEffect(() => {
+    if (session?.access_token) {
+      supabase.realtime.setAuth(session.access_token)
+    }
+  }, [session?.access_token])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,

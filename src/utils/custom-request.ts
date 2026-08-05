@@ -29,6 +29,14 @@ export const occasionLabels: Record<string, string> = {
   other: 'Khác',
 }
 
+export const budgetRangeLabels: Record<string, string> = {
+  under_100k: 'Dưới 100k',
+  '100k_200k': '100k - 200k',
+  '200k_500k': '200k - 500k',
+  over_500k: 'Trên 500k',
+  need_consult: 'Cần tư vấn',
+}
+
 export const getCustomRequestStatusTone = (status: CustomRequestStatus) => {
   if (status === 'completed') return 'success'
   if (status === 'cancelled') return 'danger'
@@ -41,5 +49,8 @@ export const normalizeCustomRequestStatus = (value: string | null): CustomReques
     ? value
     : 'all'
 
-export const getCustomRequestOccasionLabel = (request: CustomRequest) =>
+export const getCustomRequestOccasionLabel = (request: Pick<CustomRequest, 'occasion'>) =>
   request.occasion ? occasionLabels[request.occasion] ?? request.occasion : 'Không có'
+
+export const getCustomRequestBudgetLabel = (request: Pick<CustomRequest, 'budget_range'>) =>
+  request.budget_range ? budgetRangeLabels[request.budget_range] ?? request.budget_range : 'Chưa chọn'

@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom'
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui'
 import type { DashboardCustomRequest, DashboardOrder } from '../../../services'
-import { cn, formatCurrency, formatDateTime, getOrderItemsText, getOrderRevenue, statusTone } from '../../../utils'
-
-const orderStatusLabels: Record<string, string> = {
-  pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
-  done: 'Hoàn thành',
-  cancelled: 'Đã hủy',
-}
+import {
+  cn,
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  getCustomRequestBudgetLabel,
+  getOrderItemsText,
+  getOrderRevenue,
+  getOrderStatusLabel,
+  statusTone,
+} from '../../../utils'
 
 const requestStatusLabels: Record<string, string> = {
   pending: 'Chưa liên hệ',
@@ -68,7 +71,7 @@ const RecentOrdersTable = ({ orders }: { orders: DashboardOrder[] }) => (
                   </td>
                   <td className="px-4 py-4 font-black text-ink">{formatCurrency(getOrderRevenue(order))}</td>
                   <td className="px-4 py-4">
-                    <Badge tone={statusTone(order.status)}>{orderStatusLabels[order.status] ?? order.status}</Badge>
+                    <Badge tone={statusTone(order.status)}>{getOrderStatusLabel(order)}</Badge>
                   </td>
                 </tr>
               ))}
@@ -110,6 +113,10 @@ const RecentRequestsTable = ({ requests }: { requests: DashboardCustomRequest[] 
             <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted">
               {request.occasion ? `${request.occasion} · ` : ''}
               {request.description ?? 'Khách chưa nhập mô tả.'}
+            </p>
+            <p className="mt-2 text-xs font-bold text-muted">
+              {getCustomRequestBudgetLabel(request)}
+              {request.expected_date ? ` · Cần trước ${formatDate(request.expected_date)}` : ''}
             </p>
           </div>
         ))

@@ -172,7 +172,7 @@ export const VoucherFormDialog = ({ promotion, onClose, onSaved }: VoucherFormDi
                   </VoucherFormField>
                 </div>
                 <VoucherFormField label="Giới hạn lượt nhận" error={errors.usage_limit?.message}>
-                  <input {...register('usage_limit', nullableNumberRegisterOptions)} type="number" min={0} className="admin-input" placeholder="Bỏ trống nếu không giới hạn" />
+                  <input {...register('usage_limit', nullableNumberRegisterOptions)} type="number" min={1} className="admin-input" placeholder="Bỏ trống nếu không giới hạn, tối thiểu 1" />
                 </VoucherFormField>
               </VoucherFormSection>
 

@@ -5,8 +5,10 @@ import { useUpdateCustomRequestStatusMutation } from '../../../queries'
 import type { CustomRequest, CustomRequestStatus } from '../../../services'
 import {
   customRequestStatusLabels,
+  formatDate,
   editableCustomRequestStatusOptions,
   formatDateTime,
+  getCustomRequestBudgetLabel,
   getCustomRequestOccasionLabel,
   getCustomRequestStatusTone,
 } from '../../../utils'
@@ -116,6 +118,8 @@ export const CustomRequestDetailDialog = ({
                 <InfoRow label="SĐT" value={request.phone} />
                 <InfoRow label="Số lượng" value={String(request.quantity)} />
                 <InfoRow label="Dịp tặng" value={getCustomRequestOccasionLabel(request)} />
+                <InfoRow label="Thời gian mong muốn" value={request.expected_date ? formatDate(request.expected_date) : 'Chưa có'} />
+                <InfoRow label="Ngân sách" value={getCustomRequestBudgetLabel(request)} />
                 <InfoRow label="Tone màu" value={request.preferred_colors || 'Không có'} />
                 <InfoRow label="Ghi chú" value={request.note || 'Không có'} />
               </dl>

@@ -1,7 +1,7 @@
 import { AiOutlineEye, AiOutlineGift, AiOutlineLoading3Quarters, AiOutlineTeam } from 'react-icons/ai'
 import { Badge, Button } from '../../../components/ui'
 import type { Customer } from '../../../services'
-import { formatCurrency, formatDateTime, getCustomerIdentifier } from '../../../utils'
+import { formatDateTime, getCustomerIdentifier } from '../../../utils'
 
 interface CustomersTableProps {
   customers: Customer[]
@@ -35,7 +35,7 @@ export const CustomersTable = ({
     return (
       <div className="rounded-admin border border-berry/20 bg-berry/10 p-5">
         <p className="font-black text-berry">Không tải được khách hàng</p>
-        <p className="mt-1 text-sm text-muted">Kiểm tra quyền admin với orders, custom_requests và user_promotions.</p>
+        <p className="mt-1 text-sm text-muted">Kiểm tra quyền admin với customer_profiles và user_promotions.</p>
         <Button className="mt-4" variant="secondary" onClick={onRetry}>
           Tải lại
         </Button>
@@ -55,15 +55,13 @@ export const CustomersTable = ({
 
   return (
     <div className="overflow-x-auto rounded-admin border border-berry/10">
-      <table className="w-full min-w-[1080px] text-left text-sm">
+      <table className="w-full min-w-[860px] text-left text-sm">
         <thead className="bg-cream text-xs uppercase text-muted">
           <tr>
             <th className="px-4 py-3">Khách hàng</th>
-            <th className="px-4 py-3">Đơn hàng</th>
-            <th className="px-4 py-3">Tổng chi tiêu</th>
-            <th className="px-4 py-3">Đặt riêng</th>
+            <th className="px-4 py-3">Số điện thoại</th>
             <th className="px-4 py-3">Voucher</th>
-            <th className="px-4 py-3">Gần nhất</th>
+            <th className="px-4 py-3">Hoạt động gần nhất</th>
             <th className="px-4 py-3 text-right">Thao tác</th>
           </tr>
         </thead>
@@ -76,24 +74,23 @@ export const CustomersTable = ({
             >
               <td className="px-4 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush text-sm font-black text-ink ring-1 ring-berry/10">
-                    {customer.display_name.slice(0, 1).toUpperCase()}
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush text-sm font-black text-ink ring-1 ring-berry/10">
+                    {customer.avatar_url ? (
+                      <img src={customer.avatar_url} alt={customer.display_name} className="h-full w-full object-cover" />
+                    ) : (
+                      customer.display_name.slice(0, 1).toUpperCase()
+                    )}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="truncate font-black text-ink">{customer.display_name}</p>
                       {customer.id === highlightedCustomerId ? <Badge tone="success">Vừa cấp</Badge> : null}
                     </div>
-                    <p className="mt-1 text-xs font-bold text-muted">{getCustomerIdentifier(customer)}</p>
+                    <p className="mt-1 truncate text-xs font-bold text-muted">{customer.zalo_user_id}</p>
                   </div>
                 </div>
               </td>
-              <td className="px-4 py-4 text-muted">
-                <p className="font-black text-ink">{customer.order_count} đơn</p>
-                <p className="mt-1 text-xs font-bold">{customer.completed_order_count} hoàn thành</p>
-              </td>
-              <td className="px-4 py-4 font-black text-ink">{formatCurrency(customer.total_spent)}</td>
-              <td className="px-4 py-4 font-black text-ink">{customer.custom_request_count}</td>
+              <td className="px-4 py-4 font-bold text-cocoa">{getCustomerIdentifier(customer)}</td>
               <td className="px-4 py-4 text-muted">
                 <p className="font-black text-ink">{customer.voucher_count} voucher</p>
                 <p className="mt-1 text-xs font-bold">{customer.used_voucher_count} đã dùng</p>

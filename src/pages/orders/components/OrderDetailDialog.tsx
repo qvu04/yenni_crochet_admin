@@ -7,10 +7,14 @@ import {
   editableOrderStatusOptions,
   formatCurrency,
   formatDateTime,
+  getOrderDepositAmount,
   getOrderItemProduct,
+  getOrderRemainingAmount,
+  getOrderStatusLabel,
   getOrderStatusTone,
   getOrderTotal,
-  orderStatusLabels,
+  paymentStatusLabels,
+  paymentTypeLabels,
 } from '../../../utils'
 
 interface OrderDetailDialogProps {
@@ -62,7 +66,7 @@ export const OrderDetailDialog = ({ order, onClose, onSaved }: OrderDetailDialog
                 <div>
                   <p className="text-sm font-bold text-muted">Trạng thái hiện tại</p>
                   <div className="mt-2">
-                    <Badge tone={getOrderStatusTone(order.status)}>{orderStatusLabels[order.status]}</Badge>
+                    <Badge tone={getOrderStatusTone(order)}>{getOrderStatusLabel(order)}</Badge>
                   </div>
                 </div>
                 <p className="text-sm font-bold text-muted">{formatDateTime(order.created_at)}</p>
@@ -121,6 +125,11 @@ export const OrderDetailDialog = ({ order, onClose, onSaved }: OrderDetailDialog
               <dl className="mt-4 space-y-3 text-sm">
                 <InfoRow label="Tạm tính" value={formatCurrency(Number(order.subtotal_price ?? getOrderTotal(order)))} />
                 <InfoRow label="Giảm giá" value={formatCurrency(Number(order.discount_amount ?? 0))} />
+                <InfoRow label="Hình thức" value={order.payment_type ? paymentTypeLabels[order.payment_type] : 'Chưa rõ'} />
+                <InfoRow label="Trạng thái" value={order.payment_status ? paymentStatusLabels[order.payment_status] : 'Chưa rõ'} />
+                <InfoRow label="Đã cọc" value={formatCurrency(getOrderDepositAmount(order))} />
+                <InfoRow label="Còn lại" value={formatCurrency(getOrderRemainingAmount(order))} />
+                {order.paid_at ? <InfoRow label="Ngày thanh toán" value={formatDateTime(order.paid_at)} /> : null}
                 <InfoRow label="Tổng cộng" value={formatCurrency(getOrderTotal(order))} strong />
               </dl>
             </section>

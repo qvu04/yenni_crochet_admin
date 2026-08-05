@@ -3,7 +3,14 @@ import { useSearchParams } from 'react-router-dom'
 import { ActionNotice, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
 import { useOrdersQuery } from '../../queries'
 import type { Order, OrderStatusFilter } from '../../services'
-import { formatCurrency, getOrderTotal, normalizeOrderStatus, orderStatusLabels } from '../../utils'
+import {
+  formatCurrency,
+  getOrderStatusLabel,
+  getOrderTotal,
+  isCancelledOrder,
+  isWaitingPaymentOrder,
+  normalizeOrderStatus,
+} from '../../utils'
 import { OrderDetailDialog, OrderFilters, OrderMetric, OrdersTable } from './components'
 
 const SAVE_FEEDBACK_DURATION_MS = 4500
@@ -40,10 +47,13 @@ export const OrdersPage = () => {
   }, [savedNotice])
 
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data])
-  const pendingOrders = useMemo(() => orders.filter((order) => order.status === 'pending'), [orders])
-  const confirmedOrders = useMemo(() => orders.filter((order) => order.status === 'confirmed'), [orders])
+  const waitingPaymentOrders = useMemo(() => orders.filter(isWaitingPaymentOrder), [orders])
+  const inProgressOrders = useMemo(
+    () => orders.filter((order) => order.status === 'confirmed' || order.status === 'making' || order.status === 'shipping' || order.status === 'delivering'),
+    [orders],
+  )
   const totalRevenue = useMemo(
-    () => orders.filter((order) => order.status !== 'cancelled').reduce((total, order) => total + getOrderTotal(order), 0),
+    () => orders.filter((order) => !isCancelledOrder(order)).reduce((total, order) => total + getOrderTotal(order), 0),
     [orders],
   )
 
@@ -71,7 +81,7 @@ export const OrdersPage = () => {
     setSavedNotice({
       id: order.id,
       customerName: order.customer_name,
-      statusLabel: orderStatusLabels[order.status],
+      statusLabel: getOrderStatusLabel(order),
     })
   }
 
@@ -95,8 +105,8 @@ export const OrdersPage = () => {
 
       <section className="grid gap-4 md:grid-cols-4">
         <OrderMetric label="Tổng đơn" value={orders.length} />
-        <OrderMetric label="Chờ xác nhận" value={pendingOrders.length} />
-        <OrderMetric label="Đã xác nhận" value={confirmedOrders.length} />
+        <OrderMetric label="Chờ cọc" value={waitingPaymentOrders.length} />
+        <OrderMetric label="Đang xử lý" value={inProgressOrders.length} />
         <OrderMetric label="Tổng giá trị" value={formatCurrency(totalRevenue)} />
       </section>
 

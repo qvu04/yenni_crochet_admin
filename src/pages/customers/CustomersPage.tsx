@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { ActionNotice, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
 import { useCustomersQuery } from '../../queries'
 import type { Customer, CustomerFilter, CustomerPromotion } from '../../services'
-import { formatCurrency, getCustomerPromotionTitle, normalizeCustomerFilter } from '../../utils'
+import { getCustomerPromotionTitle, normalizeCustomerFilter } from '../../utils'
 import {
   CustomerDetailDialog,
   CustomerFilters,
@@ -47,13 +47,13 @@ export const CustomersPage = () => {
   }, [grantedNotice])
 
   const customers = useMemo(() => customersQuery.data ?? [], [customersQuery.data])
-  const customersWithZalo = useMemo(() => customers.filter((customer) => customer.zalo_user_id), [customers])
-  const totalRevenue = useMemo(
-    () => customers.reduce((total, customer) => total + customer.total_spent, 0),
-    [customers],
-  )
+  const customersWithPhone = useMemo(() => customers.filter((customer) => customer.phone), [customers])
   const totalGrantedVouchers = useMemo(
     () => customers.reduce((total, customer) => total + customer.voucher_count, 0),
+    [customers],
+  )
+  const totalUsedVouchers = useMemo(
+    () => customers.reduce((total, customer) => total + customer.used_voucher_count, 0),
     [customers],
   )
 
@@ -99,15 +99,15 @@ export const CustomersPage = () => {
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Khách hàng</p>
         <h2 className="mt-2 text-3xl font-black text-ink">Quản lý khách hàng</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-          Tổng hợp khách từ đơn hàng, yêu cầu đặt riêng và ví voucher để shop chăm sóc đúng người.
+          Quản lý hồ sơ khách từ customer_profiles và cấp voucher cá nhân theo Zalo user id.
         </p>
       </section>
 
       <section className="grid gap-4 md:grid-cols-4">
         <CustomerMetric label="Tổng khách" value={customers.length} />
-        <CustomerMetric label="Có Zalo ID" value={customersWithZalo.length} />
-        <CustomerMetric label="Doanh thu" value={formatCurrency(totalRevenue)} />
+        <CustomerMetric label="Có SĐT" value={customersWithPhone.length} />
         <CustomerMetric label="Voucher đã cấp" value={totalGrantedVouchers} />
+        <CustomerMetric label="Voucher đã dùng" value={totalUsedVouchers} />
       </section>
 
       {grantedNotice ? (

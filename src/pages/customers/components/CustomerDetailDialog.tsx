@@ -3,13 +3,10 @@ import { Badge, Button } from '../../../components/ui'
 import type { Customer } from '../../../services'
 import {
   customerVoucherStatusLabels,
-  formatCurrency,
   formatDateTime,
   getCustomerIdentifier,
   getCustomerPromotionTitle,
   getCustomerVoucherStatusTone,
-  getOrderTotal,
-  orderStatusLabels,
 } from '../../../utils'
 
 interface CustomerDetailDialogProps {
@@ -42,25 +39,25 @@ export const CustomerDetailDialog = ({ customer, onClose, onGrantVoucher }: Cust
         </div>
       </div>
 
-      <div className="grid gap-6 p-5 lg:grid-cols-[0.8fr_1.2fr]">
+      <div className="grid gap-6 p-5 lg:grid-cols-[0.75fr_1.25fr]">
         <aside className="space-y-4">
           <section className="rounded-admin border border-berry/10 bg-cream p-4">
-            <h4 className="font-black text-ink">Thông tin</h4>
+            <div className="flex items-center gap-3">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush text-lg font-black text-ink ring-1 ring-berry/10">
+                {customer.avatar_url ? (
+                  <img src={customer.avatar_url} alt={customer.display_name} className="h-full w-full object-cover" />
+                ) : (
+                  customer.display_name.slice(0, 1).toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0">
+                <h4 className="truncate font-black text-ink">{customer.display_name}</h4>
+                <p className="mt-1 truncate text-xs font-bold text-muted">{customer.zalo_user_id}</p>
+              </div>
+            </div>
             <dl className="mt-4 space-y-3 text-sm">
-              <InfoRow label="Định danh" value={getCustomerIdentifier(customer)} />
-              <InfoRow label="SĐT" value={customer.phone || 'Chưa có'} />
-              <InfoRow label="Địa chỉ gần nhất" value={customer.address || 'Chưa có'} />
+              <InfoRow label="Số điện thoại" value={getCustomerIdentifier(customer)} />
               <InfoRow label="Hoạt động gần nhất" value={customer.last_activity_at ? formatDateTime(customer.last_activity_at) : 'Chưa có'} />
-            </dl>
-          </section>
-
-          <section className="rounded-admin border border-berry/10 bg-white p-4">
-            <h4 className="font-black text-ink">Tổng quan mua hàng</h4>
-            <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <InfoRow label="Đơn hàng" value={`${customer.order_count}`} strong />
-              <InfoRow label="Hoàn thành" value={`${customer.completed_order_count}`} strong />
-              <InfoRow label="Đặt riêng" value={`${customer.custom_request_count}`} strong />
-              <InfoRow label="Chi tiêu" value={formatCurrency(customer.total_spent)} strong />
             </dl>
           </section>
         </aside>
@@ -88,53 +85,16 @@ export const CustomerDetailDialog = ({ customer, onClose, onGrantVoucher }: Cust
               )}
             </div>
           </section>
-
-          <section className="rounded-admin border border-berry/10 bg-white p-4">
-            <h4 className="font-black text-ink">Đơn hàng gần đây</h4>
-            <div className="mt-4 space-y-3">
-              {customer.orders.length ? (
-                customer.orders.slice(0, 5).map((order) => (
-                  <div key={order.id} className="flex items-center justify-between gap-3 rounded-admin bg-cream p-3">
-                    <div>
-                      <p className="font-black text-ink">{formatCurrency(getOrderTotal(order))}</p>
-                      <p className="mt-1 text-xs font-bold text-muted">{formatDateTime(order.created_at)}</p>
-                    </div>
-                    <Badge tone={order.status === 'done' ? 'success' : order.status === 'cancelled' ? 'danger' : 'info'}>
-                      {orderStatusLabels[order.status]}
-                    </Badge>
-                  </div>
-                ))
-              ) : (
-                <EmptyRow text="Khách chưa có đơn hàng." />
-              )}
-            </div>
-          </section>
-
-          <section className="rounded-admin border border-berry/10 bg-white p-4">
-            <h4 className="font-black text-ink">Yêu cầu đặt riêng</h4>
-            <div className="mt-4 space-y-3">
-              {customer.custom_requests.length ? (
-                customer.custom_requests.slice(0, 5).map((request) => (
-                  <div key={request.id} className="rounded-admin bg-cream p-3">
-                    <p className="line-clamp-2 font-bold text-cocoa">{request.description || 'Chưa nhập mô tả'}</p>
-                    <p className="mt-1 text-xs font-bold text-muted">{formatDateTime(request.created_at)}</p>
-                  </div>
-                ))
-              ) : (
-                <EmptyRow text="Khách chưa có yêu cầu đặt riêng." />
-              )}
-            </div>
-          </section>
         </section>
       </div>
     </div>
   </div>
 )
 
-const InfoRow = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
+const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div>
     <dt className="text-xs font-bold uppercase text-muted">{label}</dt>
-    <dd className={strong ? 'mt-1 text-lg font-black text-ink' : 'mt-1 font-bold text-cocoa'}>{value}</dd>
+    <dd className="mt-1 font-bold text-cocoa">{value}</dd>
   </div>
 )
 

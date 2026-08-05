@@ -88,7 +88,11 @@ const normalizeProductPayload = (values: ProductFormValues) => ({
   estimated_days: values.estimated_days?.trim() || null,
   allow_customization: values.allow_customization,
   is_active: values.is_active,
-  stock_quantity: values.stock_quantity,
+  stock_quantity: values.variants.length
+    ? values.variants
+      .filter((variant) => variant.is_active)
+      .reduce((total, variant) => total + variant.stock_quantity, 0)
+    : values.stock_quantity,
   is_featured: values.product_type === 'best_seller',
   ...toProductTypeColumns(values.product_type),
 })

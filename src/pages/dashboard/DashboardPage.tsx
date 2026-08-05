@@ -7,6 +7,7 @@ import {
   getOrderRevenue,
   getProductInventoryQuantity,
   getTodayOrders,
+  statusTone,
   type RevenuePeriod,
   wait,
 } from '../../utils'
@@ -39,7 +40,7 @@ export const DashboardPage = () => {
     const orders = dashboardQuery.data?.orders ?? []
     const customRequests = dashboardQuery.data?.customRequests ?? []
     const products = dashboardQuery.data?.products ?? []
-    const todayOrders = getTodayOrders(orders).filter((order) => order.status !== 'cancelled')
+    const todayOrders = getTodayOrders(orders).filter((order) => statusTone(order.status) !== 'danger')
     const revenueSeries = buildRevenueSeries(orders, revenuePeriod)
     const activeProducts = products.filter((product) => product.is_active)
     const totalInventoryQuantity = activeProducts.reduce(

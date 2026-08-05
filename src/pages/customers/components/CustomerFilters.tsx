@@ -31,7 +31,7 @@ export const CustomerFilters = ({
         <input
           value={searchInput}
           onChange={(event) => onSearchInputChange(event.target.value)}
-          placeholder="Tìm tên, SĐT hoặc Zalo user id"
+          placeholder="Tìm tên, SĐT hoặc Zalo ID"
           className="h-11 w-full rounded-admin border border-berry/15 bg-cream pl-11 pr-4 text-sm font-bold text-ink outline-none transition focus:border-berry"
         />
       </form>

@@ -14,6 +14,8 @@ export interface CustomRequest {
   quantity: number
   occasion: string | null
   preferred_colors: string | null
+  expected_date: string | null
+  budget_range: string | null
   note: string | null
   created_at: string
 }
@@ -34,54 +36,106 @@ const CUSTOM_REQUEST_SELECT = `
   quantity,
   occasion,
   preferred_colors,
+  expected_date,
+  budget_range,
+  note,
+  created_at
+`
+
+const CUSTOM_REQUEST_FALLBACK_SELECT = `
+  id,
+  customer_name,
+  phone,
+  description,
+  reference_images,
+  zalo_user_id,
+  status,
+  quantity,
+  occasion,
+  preferred_colors,
   note,
   created_at
 `
 
 const normalizeSearchTerm = (value: string) => value.trim().replace(/[,%()]/g, ' ').replace(/\s+/g, ' ')
 
+const isMissingColumnError = (error: { code?: string; message?: string } | null) =>
+  error?.code === '42703' || error?.message?.toLowerCase().includes('column') === true
+
+const withCustomRequestDefaults = (request: Partial<CustomRequest>): CustomRequest => ({
+  expected_date: null,
+  budget_range: null,
+  ...request,
+} as CustomRequest)
+
+const buildCustomRequestsQuery = (select: string, { search, status = 'all' }: CustomRequestFilters) => {
+  let query = supabase
+    .from('custom_requests')
+    .select(select)
+    .order('created_at', { ascending: false })
+
+  if (status !== 'all') {
+    query = query.eq('status', status)
+  }
+
+  if (search?.trim()) {
+    const keyword = normalizeSearchTerm(search)
+    if (keyword) {
+      query = query.or(`customer_name.ilike.%${keyword}%,phone.ilike.%${keyword}%,description.ilike.%${keyword}%`)
+    }
+  }
+
+  return query
+}
+
 export const customRequestServices = {
   getCustomRequests: async ({ search, status = 'all' }: CustomRequestFilters): Promise<CustomRequest[]> => {
-    let query = supabase
-      .from('custom_requests')
-      .select(CUSTOM_REQUEST_SELECT)
-      .order('created_at', { ascending: false })
+    const result = await buildCustomRequestsQuery(CUSTOM_REQUEST_SELECT, { search, status })
+    let data: unknown = result.data
+    let error = result.error
 
-    if (status !== 'all') {
-      query = query.eq('status', status)
+    if (isMissingColumnError(error)) {
+      const fallbackResult = await buildCustomRequestsQuery(CUSTOM_REQUEST_FALLBACK_SELECT, { search, status })
+      data = fallbackResult.data
+      error = fallbackResult.error
     }
-
-    if (search?.trim()) {
-      const keyword = normalizeSearchTerm(search)
-      if (keyword) {
-        query = query.or(`customer_name.ilike.%${keyword}%,phone.ilike.%${keyword}%,description.ilike.%${keyword}%`)
-      }
-    }
-
-    const { data, error } = await query
 
     if (error) {
       throw new Error(error.message)
     }
 
-    return (data ?? []) as CustomRequest[]
+    return ((data ?? []) as Partial<CustomRequest>[]).map(withCustomRequestDefaults)
   },
 
   updateCustomRequestStatus: async (
     requestId: string,
     status: CustomRequestStatus,
   ): Promise<CustomRequest> => {
-    const { data, error } = await supabase
+    const result = await supabase
       .from('custom_requests')
       .update({ status })
       .eq('id', requestId)
       .select(CUSTOM_REQUEST_SELECT)
       .single()
+    let data: unknown = result.data
+    let error = result.error
+
+    if (isMissingColumnError(error)) {
+      const fallbackResult = await supabase
+        .from('custom_requests')
+        .update({ status })
+        .eq('id', requestId)
+        .select(CUSTOM_REQUEST_FALLBACK_SELECT)
+        .single()
+
+      data = fallbackResult.data
+      error = fallbackResult.error
+    }
 
     if (error) {
       throw new Error(error.message)
     }
 
-    return data as CustomRequest
+    return withCustomRequestDefaults(data as Partial<CustomRequest>)
   },
 }

@@ -1,6 +1,10 @@
-import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   AiOutlineCalendar,
+  AiOutlineBell,
+  AiOutlineCheck,
+  AiOutlineClose,
   AiOutlineGift,
   AiOutlineInbox,
   AiOutlineLoading3Quarters,
@@ -12,6 +16,8 @@ import {
 import shopImg from '../../assets/shop.png'
 import { useLogoutMutation } from '../../queries'
 import { useAuth } from '../../providers'
+import { useAdminRealtimeNotifications } from '../../hooks/useAdminRealtimeNotifications'
+import { formatDateTime } from '../../utils'
 
 const navigation = [
   { label: 'Tổng quan', href: '/', icon: <AiOutlinePieChart /> },
@@ -28,6 +34,14 @@ export const AdminLayout = () => {
   const location = useLocation()
   const { session, adminProfile, isAdmin, isLoading } = useAuth()
   const logoutMutation = useLogoutMutation()
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+  const {
+    notifications,
+    unreadCount,
+    connectionStatus,
+    markAllAsRead,
+    clearNotifications,
+  } = useAdminRealtimeNotifications(Boolean(session && isAdmin))
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -116,14 +130,98 @@ export const AdminLayout = () => {
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Trang quản trị</p>
               <p className="mt-1 text-sm font-bold text-ink">{adminProfile?.display_name}</p>
             </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={logoutMutation.isPending}
-              className="rounded-admin bg-ink px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {logoutMutation.isPending ? 'Đang đăng xuất...' : 'Đăng xuất'}
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsNotificationOpen((currentValue) => !currentValue)
+                    markAllAsRead()
+                  }}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-admin bg-white text-xl text-ink shadow-sm ring-1 ring-berry/10 transition hover:bg-blush"
+                  aria-label="Thông báo realtime"
+                >
+                  <AiOutlineBell />
+                  {unreadCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-berry px-1 text-[10px] font-black text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  ) : null}
+                </button>
+
+                {isNotificationOpen ? (
+                  <section className="absolute right-0 mt-3 w-[min(360px,calc(100vw-40px))] overflow-hidden rounded-admin bg-white shadow-soft ring-1 ring-berry/10">
+                    <div className="flex items-start justify-between gap-3 border-b border-berry/10 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-black text-ink">Thông báo mới</p>
+                        <p className="mt-1 text-xs font-bold text-muted">
+                          {connectionStatus === 'connected'
+                            ? 'Đang lắng nghe đơn hàng realtime'
+                            : connectionStatus === 'error'
+                              ? 'Realtime chưa kết nối'
+                              : 'Đang khởi tạo realtime'}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={clearNotifications}
+                          className="flex h-8 w-8 items-center justify-center rounded-admin text-muted transition hover:bg-cream hover:text-ink"
+                          aria-label="Xóa thông báo"
+                        >
+                          <AiOutlineCheck />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsNotificationOpen(false)}
+                          className="flex h-8 w-8 items-center justify-center rounded-admin text-muted transition hover:bg-cream hover:text-ink"
+                          aria-label="Đóng thông báo"
+                        >
+                          <AiOutlineClose />
+                        </button>
+                      </div>
+                    </div>
+
+                    {notifications.length ? (
+                      <div className="max-h-96 overflow-y-auto p-2">
+                        {notifications.map((notification) => (
+                          <Link
+                            key={notification.id}
+                            to={notification.href}
+                            onClick={() => setIsNotificationOpen(false)}
+                            className="block rounded-admin px-3 py-3 transition hover:bg-cream"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-black text-ink">{notification.title}</p>
+                                <p className="mt-1 truncate text-sm font-bold text-cocoa">{notification.description}</p>
+                                <p className="mt-1 text-xs font-bold text-muted">{formatDateTime(notification.createdAt)}</p>
+                              </div>
+                              <span className="mt-1 rounded-full bg-blush px-2 py-1 text-[10px] font-black uppercase text-ink">
+                                {notification.type === 'order' ? 'Đơn' : 'Đặt riêng'}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-8 text-center text-sm font-bold text-muted">
+                        Chưa có thông báo mới trong phiên này.
+                      </div>
+                    )}
+                  </section>
+                ) : null}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending}
+                className="rounded-admin bg-ink px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {logoutMutation.isPending ? 'Đang đăng xuất...' : 'Đăng xuất'}
+              </button>
+            </div>
           </div>
         </header>
 
