@@ -21,6 +21,7 @@ export const productVariantSchema = z.object({
     .refine((value) => !value || /^#[0-9A-Fa-f]{6}$/.test(value), 'Mã màu dạng #FFFFFF'),
   price: z.number().int().min(0).nullable(),
   stock_quantity: z.coerce.number().int().min(0, 'Tồn kho không hợp lệ'),
+  images: z.array(z.string().url()),
   is_active: z.boolean(),
 })
 

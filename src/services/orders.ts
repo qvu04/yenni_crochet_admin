@@ -1,16 +1,13 @@
 import { supabase } from './supabase'
 
 export type OrderStatus =
-  | 'pending'
+  | 'awaiting_confirmation'
   | 'confirmed'
   | 'making'
   | 'shipping'
-  | 'delivering'
   | 'done'
-  | 'completed'
   | 'cancelled'
-  | 'canceled'
-export type OrderStatusFilter = 'all' | 'waiting_payment' | 'paid_deposit' | OrderStatus
+export type OrderStatusFilter = 'all' | OrderStatus
 
 export type OrderPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 export type OrderPaymentType = 'deposit' | 'full' | 'none'
@@ -49,6 +46,10 @@ export interface Order {
   deposit_amount: number | null
   remaining_amount: number | null
   paid_at: string | null
+  delivery_latitude: number | null
+  delivery_longitude: number | null
+  delivery_location_accuracy: number | null
+  delivery_location_token: string | null
   created_at: string
   order_items?: OrderItem[] | null
 }
@@ -78,6 +79,10 @@ const ORDER_SELECT = `
   deposit_amount,
   remaining_amount,
   paid_at,
+  delivery_latitude,
+  delivery_longitude,
+  delivery_location_accuracy,
+  delivery_location_token,
   created_at,
   order_items (
     id,
@@ -134,23 +139,20 @@ const withOrderDefaults = (order: Partial<Order>): Order => ({
   deposit_amount: null,
   remaining_amount: null,
   paid_at: null,
+  delivery_latitude: null,
+  delivery_longitude: null,
+  delivery_location_accuracy: null,
+  delivery_location_token: null,
   ...order,
 } as Order)
 
 const buildOrdersQuery = (
   select: string,
   { search, status = 'all' }: OrderFilters,
-  usePaymentColumns: boolean,
 ) => {
   let query = supabase.from('orders').select(select).order('created_at', { ascending: false })
 
-  if (status === 'waiting_payment') {
-    query = usePaymentColumns ? query.eq('status', 'pending').eq('payment_status', 'pending') : query.eq('status', 'pending')
-  } else if (status === 'paid_deposit') {
-    query = usePaymentColumns
-      ? query.eq('payment_type', 'deposit').eq('payment_status', 'paid').gt('deposit_amount', 0)
-      : query.eq('id', '00000000-0000-0000-0000-000000000000')
-  } else if (status !== 'all') {
+  if (status !== 'all') {
     query = query.eq('status', status)
   }
 
@@ -164,12 +166,12 @@ const buildOrdersQuery = (
 
 export const orderServices = {
   getOrders: async ({ search, status = 'all' }: OrderFilters): Promise<Order[]> => {
-    const result = await buildOrdersQuery(ORDER_SELECT, { search, status }, true)
+    const result = await buildOrdersQuery(ORDER_SELECT, { search, status })
     let data: unknown = result.data
     let error = result.error
 
     if (isMissingColumnError(error)) {
-      const fallbackResult = await buildOrdersQuery(ORDER_FALLBACK_SELECT, { search, status }, false)
+      const fallbackResult = await buildOrdersQuery(ORDER_FALLBACK_SELECT, { search, status })
       data = fallbackResult.data
       error = fallbackResult.error
     }

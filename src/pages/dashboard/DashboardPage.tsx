@@ -54,7 +54,7 @@ export const DashboardPage = () => {
       recentRequests: customRequests.slice(0, 5),
       todayRevenue: todayOrders.reduce((total, order) => total + getOrderRevenue(order), 0),
       todayOrderCount: todayOrders.length,
-      pendingOrderCount: orders.filter((order) => order.status === 'pending').length,
+      pendingOrderCount: orders.filter((order) => order.status === 'awaiting_confirmation').length,
       pendingRequestCount: customRequests.filter((request) => request.status === 'pending').length,
       activeProductCount: activeProducts.length,
       preOrderCount: activeProducts.filter((product) => product.is_pre_order || product.product_type === 'pre_order').length,

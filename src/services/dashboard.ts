@@ -1,15 +1,12 @@
 import { supabase } from './supabase'
 
 export type DashboardOrderStatus =
-  | 'pending'
+  | 'awaiting_confirmation'
   | 'confirmed'
   | 'making'
   | 'shipping'
-  | 'delivering'
   | 'done'
-  | 'completed'
   | 'cancelled'
-  | 'canceled'
 export type DashboardCustomRequestStatus = 'pending' | 'contacted' | 'completed' | 'cancelled'
 
 export interface DashboardOrderItem {

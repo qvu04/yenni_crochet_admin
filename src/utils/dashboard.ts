@@ -9,14 +9,14 @@ export interface RevenuePoint {
 }
 
 export const statusTone = (status: string) => {
-    if (status === 'done' || status === 'completed') return 'success'
-    if (status === 'cancelled' || status === 'canceled') return 'danger'
-    if (status === 'confirmed' || status === 'shipping' || status === 'delivering' || status === 'contacted') return 'info'
+    if (status === 'done') return 'success'
+    if (status === 'cancelled') return 'danger'
+    if (status === 'confirmed' || status === 'shipping' || status === 'contacted') return 'info'
     return 'warning'
 };
 export const getOrderRevenue = (order: DashboardOrder) => Number(order.final_price ?? order.subtotal_price ?? 0);
 
-const isCancelledDashboardOrder = (order: DashboardOrder) => order.status === 'cancelled' || order.status === 'canceled'
+const isCancelledDashboardOrder = (order: DashboardOrder) => order.status === 'cancelled'
 
 export const getTodayOrders = (orders: DashboardOrder[]) => {
     const todayKey = toDateKey(new Date())

@@ -7,8 +7,8 @@ import {
   formatCurrency,
   getOrderStatusLabel,
   getOrderTotal,
+  isAwaitingConfirmationOrder,
   isCancelledOrder,
-  isWaitingPaymentOrder,
   normalizeOrderStatus,
 } from '../../utils'
 import { OrderDetailDialog, OrderFilters, OrderMetric, OrdersTable } from './components'
@@ -47,9 +47,9 @@ export const OrdersPage = () => {
   }, [savedNotice])
 
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data])
-  const waitingPaymentOrders = useMemo(() => orders.filter(isWaitingPaymentOrder), [orders])
+  const awaitingConfirmationOrders = useMemo(() => orders.filter(isAwaitingConfirmationOrder), [orders])
   const inProgressOrders = useMemo(
-    () => orders.filter((order) => order.status === 'confirmed' || order.status === 'making' || order.status === 'shipping' || order.status === 'delivering'),
+    () => orders.filter((order) => order.status === 'confirmed' || order.status === 'making' || order.status === 'shipping'),
     [orders],
   )
   const totalRevenue = useMemo(
@@ -105,7 +105,7 @@ export const OrdersPage = () => {
 
       <section className="grid gap-4 md:grid-cols-4">
         <OrderMetric label="Tổng đơn" value={orders.length} />
-        <OrderMetric label="Chờ cọc" value={waitingPaymentOrders.length} />
+        <OrderMetric label="Chờ xác nhận" value={awaitingConfirmationOrders.length} />
         <OrderMetric label="Đang xử lý" value={inProgressOrders.length} />
         <OrderMetric label="Tổng giá trị" value={formatCurrency(totalRevenue)} />
       </section>
