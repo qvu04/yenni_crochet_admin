@@ -80,6 +80,8 @@ export const getOrderDepositAmount = (order: Order) => Number(order.deposit_amou
 export const getOrderRemainingAmount = (order: Order) =>
   Number(order.remaining_amount ?? Math.max(getOrderTotal(order) - getOrderDepositAmount(order), 0))
 
+export const getShortOrderCode = (orderId: string) => orderId.slice(0, 8).toUpperCase()
+
 export const getOrderItemProduct = (item: OrderItem) =>
   Array.isArray(item.products) ? item.products[0] : item.products
 

@@ -26,3 +26,16 @@ export const useUpdateOrderStatusMutation = () => {
     },
   })
 }
+
+export const useBulkUpdateOrderStatusMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ orderIds, status }: { orderIds: string[]; status: OrderStatus }) =>
+      orderServices.updateManyOrderStatus(orderIds, status),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: orderQueryKeys.all })
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKeys.all })
+    },
+  })
+}

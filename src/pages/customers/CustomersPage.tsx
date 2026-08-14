@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ActionNotice, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
+import { ActionNotice, Card, CardContent, CardDescription, CardHeader, CardTitle, getPaginatedItems, TablePagination } from '../../components/ui'
 import { useCustomersQuery } from '../../queries'
 import type { Customer, CustomerFilter, CustomerPromotion } from '../../services'
 import { getCustomerPromotionTitle, normalizeCustomerFilter } from '../../utils'
@@ -27,6 +27,8 @@ export const CustomersPage = () => {
   const [searchInput, setSearchInput] = useState(search)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [grantingCustomer, setGrantingCustomer] = useState<Customer | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [grantedNotice, setGrantedNotice] = useState<GrantedVoucherNotice | null>(null)
   const customersQuery = useCustomersQuery({ search, type })
 
@@ -47,6 +49,7 @@ export const CustomersPage = () => {
   }, [grantedNotice])
 
   const customers = useMemo(() => customersQuery.data ?? [], [customersQuery.data])
+  const { items: paginatedCustomers } = getPaginatedItems(customers, currentPage, pageSize)
   const customersWithPhone = useMemo(() => customers.filter((customer) => customer.phone), [customers])
   const totalGrantedVouchers = useMemo(
     () => customers.reduce((total, customer) => total + customer.voucher_count, 0),
@@ -76,6 +79,10 @@ export const CustomersPage = () => {
 
     setSearchParams(nextParams)
   }
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, type, pageSize])
 
   const handleVoucherGranted = (customer: Customer, userPromotion: CustomerPromotion) => {
     setGrantedNotice({
@@ -139,13 +146,21 @@ export const CustomersPage = () => {
         </CardHeader>
         <CardContent>
           <CustomersTable
-            customers={customers}
+            customers={paginatedCustomers}
             isLoading={customersQuery.isLoading}
             isError={customersQuery.isError}
             highlightedCustomerId={grantedNotice?.customerId}
             onRetry={() => void customersQuery.refetch()}
             onView={setSelectedCustomer}
             onGrantVoucher={setGrantingCustomer}
+          />
+          <TablePagination
+            totalItems={customers.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            itemLabel="khách"
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
           />
         </CardContent>
       </Card>

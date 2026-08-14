@@ -158,7 +158,10 @@ const buildOrdersQuery = (
 
   if (search?.trim()) {
     const keyword = search.trim()
-    query = query.or(`customer_name.ilike.%${keyword}%,phone.ilike.%${keyword}%`)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(keyword)
+    query = isUuid
+      ? query.or(`id.eq.${keyword},customer_name.ilike.%${keyword}%,phone.ilike.%${keyword}%`)
+      : query.or(`customer_name.ilike.%${keyword}%,phone.ilike.%${keyword}%`)
   }
 
   return query
@@ -210,5 +213,34 @@ export const orderServices = {
     }
 
     return withOrderDefaults(data as Partial<Order>)
+  },
+
+  updateManyOrderStatus: async (orderIds: string[], status: OrderStatus): Promise<Order[]> => {
+    if (!orderIds.length) return []
+
+    const result = await supabase
+      .from('orders')
+      .update({ status })
+      .in('id', orderIds)
+      .select(ORDER_SELECT)
+    let data: unknown = result.data
+    let error = result.error
+
+    if (isMissingColumnError(error)) {
+      const fallbackResult = await supabase
+        .from('orders')
+        .update({ status })
+        .in('id', orderIds)
+        .select(ORDER_FALLBACK_SELECT)
+
+      data = fallbackResult.data
+      error = fallbackResult.error
+    }
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return ((data ?? []) as Partial<Order>[]).map(withOrderDefaults)
   },
 }

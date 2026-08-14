@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ActionNotice, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
-import { useOrdersQuery } from '../../queries'
-import type { Order, OrderStatusFilter } from '../../services'
+import { AiOutlineLoading3Quarters } from 'react-icons/ai'
+import { ActionNotice, Card, CardContent, CardDescription, CardHeader, CardTitle, getPaginatedItems, TablePagination } from '../../components/ui'
+import { useBulkUpdateOrderStatusMutation, useOrdersQuery } from '../../queries'
+import type { Order, OrderStatus, OrderStatusFilter } from '../../services'
 import {
+  editableOrderStatusOptions,
   formatCurrency,
   getOrderStatusLabel,
   getOrderTotal,
@@ -19,6 +21,7 @@ interface SavedOrderNotice {
   id: string
   customerName: string
   statusLabel: string
+  count?: number
 }
 
 export const OrdersPage = () => {
@@ -27,8 +30,13 @@ export const OrdersPage = () => {
   const search = searchParams.get('q') ?? ''
   const [searchInput, setSearchInput] = useState(search)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
+  const [bulkStatus, setBulkStatus] = useState<OrderStatus>('confirmed')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [savedNotice, setSavedNotice] = useState<SavedOrderNotice | null>(null)
   const ordersQuery = useOrdersQuery({ search, status })
+  const bulkUpdateMutation = useBulkUpdateOrderStatusMutation()
 
   useEffect(() => {
     setSearchInput(search)
@@ -46,7 +54,20 @@ export const OrdersPage = () => {
     }
   }, [savedNotice])
 
+  useEffect(() => {
+    setSelectedOrderIds((currentIds) => currentIds.filter((id) => ordersQuery.data?.some((order) => order.id === id)))
+  }, [ordersQuery.data])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, status, pageSize])
+
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data])
+  const { items: paginatedOrders } = getPaginatedItems(orders, currentPage, pageSize)
+  const selectedOrders = useMemo(
+    () => orders.filter((order) => selectedOrderIds.includes(order.id)),
+    [orders, selectedOrderIds],
+  )
   const awaitingConfirmationOrders = useMemo(() => orders.filter(isAwaitingConfirmationOrder), [orders])
   const inProgressOrders = useMemo(
     () => orders.filter((order) => order.status === 'confirmed' || order.status === 'making' || order.status === 'shipping'),
@@ -85,6 +106,45 @@ export const OrdersPage = () => {
     })
   }
 
+  const toggleSelectedOrder = (orderId: string) => {
+    setSelectedOrderIds((currentIds) =>
+      currentIds.includes(orderId)
+        ? currentIds.filter((id) => id !== orderId)
+        : [...currentIds, orderId],
+    )
+  }
+
+  const toggleSelectedAllOrders = (pageOrders: Order[]) => {
+    const pageOrderIds = pageOrders.map((order) => order.id)
+    const isEveryPageOrderSelected = pageOrderIds.every((id) => selectedOrderIds.includes(id))
+
+    setSelectedOrderIds((currentIds) =>
+      isEveryPageOrderSelected
+        ? currentIds.filter((id) => !pageOrderIds.includes(id))
+        : Array.from(new Set([...currentIds, ...pageOrderIds])),
+    )
+  }
+
+  const handleBulkUpdateStatus = () => {
+    if (!selectedOrderIds.length || bulkUpdateMutation.isPending) return
+
+    bulkUpdateMutation.mutate(
+      { orderIds: selectedOrderIds, status: bulkStatus },
+      {
+        onSuccess: (savedOrders) => {
+          const firstSavedOrder = savedOrders[0]
+          setSavedNotice({
+            id: firstSavedOrder?.id ?? selectedOrderIds[0],
+            customerName: savedOrders.length === 1 ? firstSavedOrder?.customer_name ?? '1 đơn hàng' : `${savedOrders.length} đơn hàng`,
+            statusLabel: editableOrderStatusOptions.find((option) => option.value === bulkStatus)?.label ?? 'Đã cập nhật',
+            count: savedOrders.length,
+          })
+          setSelectedOrderIds([])
+        },
+      },
+    )
+  }
+
   const scrollToSavedOrder = () => {
     if (!savedNotice) return
 
@@ -113,7 +173,9 @@ export const OrdersPage = () => {
       {savedNotice ? (
         <ActionNotice
           tone="success"
-          title={`Đã cập nhật đơn hàng của “${savedNotice.customerName}”`}
+          title={savedNotice.count && savedNotice.count > 1
+            ? `Đã cập nhật ${savedNotice.count} đơn hàng`
+            : `Đã cập nhật đơn hàng của “${savedNotice.customerName}”`}
           description={`Trạng thái mới: ${savedNotice.statusLabel}.`}
           primaryAction={{
             label: 'Xem trong danh sách',
@@ -123,11 +185,58 @@ export const OrdersPage = () => {
         />
       ) : null}
 
+      {selectedOrderIds.length ? (
+        <Card className="p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-black text-ink">Đang chọn {selectedOrderIds.length} đơn hàng</p>
+              <p className="mt-1 text-xs font-bold text-muted">
+                {selectedOrders.slice(0, 2).map((order) => order.customer_name).join(', ') || 'Chọn trạng thái mới để cập nhật hàng loạt.'}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <select
+                value={bulkStatus}
+                onChange={(event) => setBulkStatus(event.target.value as OrderStatus)}
+                className="admin-input min-w-64 bg-white"
+              >
+                {editableOrderStatusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleBulkUpdateStatus}
+                disabled={bulkUpdateMutation.isPending}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-admin bg-ink px-4 text-sm font-black text-white transition hover:bg-cocoa disabled:pointer-events-none disabled:opacity-50"
+              >
+                {bulkUpdateMutation.isPending ? <AiOutlineLoading3Quarters className="animate-spin text-lg" /> : null}
+                Cập nhật
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedOrderIds([])}
+                className="inline-flex h-11 items-center justify-center rounded-admin bg-cream px-4 text-sm font-black text-cocoa transition hover:bg-blush/60"
+              >
+                Bỏ chọn
+              </button>
+            </div>
+          </div>
+          {bulkUpdateMutation.error ? (
+            <p className="mt-3 rounded-admin bg-berry/10 px-3 py-2 text-sm font-bold text-berry">
+              Không cập nhật được: {bulkUpdateMutation.error.message}
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
+
       <Card>
-        <CardHeader className="flex-col gap-4 xl:flex-row">
+        <CardHeader className="flex-col gap-4">
           <div>
             <CardTitle>Danh sách đơn hàng</CardTitle>
-            <CardDescription>Lọc theo trạng thái và tìm nhanh theo tên hoặc số điện thoại khách hàng.</CardDescription>
+            <CardDescription>Lọc theo trạng thái và tìm nhanh theo tên, số điện thoại hoặc mã đơn hàng.</CardDescription>
           </div>
           <OrderFilters
             searchInput={searchInput}
@@ -139,12 +248,23 @@ export const OrdersPage = () => {
         </CardHeader>
         <CardContent>
           <OrdersTable
-            orders={orders}
+            orders={paginatedOrders}
             isLoading={ordersQuery.isLoading}
             isError={ordersQuery.isError}
             highlightedOrderId={savedNotice?.id}
+            selectedOrderIds={selectedOrderIds.filter((id) => paginatedOrders.some((order) => order.id === id))}
             onRetry={() => void ordersQuery.refetch()}
             onView={setSelectedOrder}
+            onToggleSelect={toggleSelectedOrder}
+            onToggleSelectAll={() => toggleSelectedAllOrders(paginatedOrders)}
+          />
+          <TablePagination
+            totalItems={orders.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            itemLabel="đơn"
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
           />
         </CardContent>
       </Card>

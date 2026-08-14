@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AiOutlinePlus } from 'react-icons/ai'
 import { useSearchParams } from 'react-router-dom'
-import { ActionNotice, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
+import { ActionNotice, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, getPaginatedItems, TablePagination } from '../../components/ui'
 import { usePromotionActiveMutation, usePromotionsQuery } from '../../queries'
 import type { Promotion, PromotionFilter, PromotionVisibilityFilter } from '../../services'
 import {
@@ -30,6 +30,8 @@ export const VouchersPage = () => {
   const [searchInput, setSearchInput] = useState(search)
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [savedNotice, setSavedNotice] = useState<SavedPromotionNotice | null>(null)
   const promotionsQuery = usePromotionsQuery({ search, status, visibility })
   const activeMutation = usePromotionActiveMutation()
@@ -39,6 +41,7 @@ export const VouchersPage = () => {
   }, [search])
 
   const promotions = useMemo(() => promotionsQuery.data ?? [], [promotionsQuery.data])
+  const { items: paginatedPromotions } = getPaginatedItems(promotions, currentPage, pageSize)
   const currentPromotions = useMemo(
     () => promotions.filter((promotion) => getPromotionStatus(promotion).label === 'Đang chạy'),
     [promotions],
@@ -75,6 +78,10 @@ export const VouchersPage = () => {
       )
     }
   }, [savedNotice, visiblePromotionIds])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, status, visibility, pageSize])
 
   const updateFilters = (nextValues: { q?: string; status?: PromotionFilter; visibility?: PromotionVisibilityFilter }) => {
     const nextParams = new URLSearchParams(searchParams)
@@ -192,7 +199,7 @@ export const VouchersPage = () => {
         </CardHeader>
         <CardContent>
           <VouchersTable
-            promotions={promotions}
+            promotions={paginatedPromotions}
             isLoading={promotionsQuery.isLoading}
             isError={promotionsQuery.isError}
             isTogglingActive={activeMutation.isPending}
@@ -202,6 +209,14 @@ export const VouchersPage = () => {
             onToggleActive={(promotion) =>
               activeMutation.mutate({ promotionId: promotion.id, isActive: !promotion.is_active })
             }
+          />
+          <TablePagination
+            totalItems={promotions.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            itemLabel="voucher"
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
           />
         </CardContent>
       </Card>

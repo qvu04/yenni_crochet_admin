@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AiOutlinePlus } from 'react-icons/ai'
 import { useSearchParams } from 'react-router-dom'
-import { ActionNotice, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
+import { ActionNotice, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, getPaginatedItems, TablePagination } from '../../components/ui'
 import { useProductActiveMutation, useProductsQuery } from '../../queries'
 import type { Product, ProductTypeFilter } from '../../services'
 import { getProductInventory, normalizeProductType } from '../../utils'
@@ -28,6 +28,8 @@ export const ProductsPage = () => {
   const [searchInput, setSearchInput] = useState(search)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [savedNotice, setSavedNotice] = useState<SavedProductNotice | null>(null)
   const productsQuery = useProductsQuery({ search, type })
   const activeMutation = useProductActiveMutation()
@@ -37,6 +39,7 @@ export const ProductsPage = () => {
   }, [search])
 
   const products = useMemo(() => productsQuery.data ?? [], [productsQuery.data])
+  const { items: paginatedProducts } = getPaginatedItems(products, currentPage, pageSize)
   const activeProducts = useMemo(() => products.filter((product) => product.is_active), [products])
   const totalInventory = useMemo(
     () => products.reduce((total, product) => total + getProductInventory(product), 0),
@@ -66,6 +69,10 @@ export const ProductsPage = () => {
       )
     }
   }, [savedNotice, visibleProductIds])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, type, pageSize])
 
   const updateFilters = (nextValues: { q?: string; type?: ProductTypeFilter }) => {
     const nextParams = new URLSearchParams(searchParams)
@@ -173,7 +180,7 @@ export const ProductsPage = () => {
         </CardHeader>
         <CardContent>
           <ProductsTable
-            products={products}
+            products={paginatedProducts}
             isLoading={productsQuery.isLoading}
             isError={productsQuery.isError}
             isTogglingActive={activeMutation.isPending}
@@ -181,6 +188,14 @@ export const ProductsPage = () => {
             onRetry={() => void productsQuery.refetch()}
             onEdit={openEditForm}
             onToggleActive={(product) => activeMutation.mutate({ productId: product.id, isActive: !product.is_active })}
+          />
+          <TablePagination
+            totalItems={products.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            itemLabel="sản phẩm"
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
           />
         </CardContent>
       </Card>

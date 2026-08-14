@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AiOutlinePlus } from 'react-icons/ai'
 import { useSearchParams } from 'react-router-dom'
-import { ActionNotice, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
+import { ActionNotice, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, getPaginatedItems, TablePagination } from '../../components/ui'
 import { useCampaignActiveMutation, useCampaignsQuery } from '../../queries'
 import type { Campaign, CampaignStatusFilter, CampaignTypeFilter } from '../../services'
 import { getCampaignProducts, getCampaignStatus, normalizeCampaignStatus, normalizeCampaignType } from '../../utils'
@@ -24,6 +24,8 @@ export const CampaignsPage = () => {
   const [searchInput, setSearchInput] = useState(search)
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [savedNotice, setSavedNotice] = useState<SavedCampaignNotice | null>(null)
   const campaignsQuery = useCampaignsQuery({ search, status, type })
   const activeMutation = useCampaignActiveMutation()
@@ -33,6 +35,7 @@ export const CampaignsPage = () => {
   }, [search])
 
   const campaigns = useMemo(() => campaignsQuery.data ?? [], [campaignsQuery.data])
+  const { items: paginatedCampaigns } = getPaginatedItems(campaigns, currentPage, pageSize)
   const currentCampaigns = useMemo(
     () => campaigns.filter((campaign) => getCampaignStatus(campaign).label === 'Đang diễn ra'),
     [campaigns],
@@ -66,6 +69,10 @@ export const CampaignsPage = () => {
       )
     }
   }, [savedNotice, visibleCampaignIds])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, status, type, pageSize])
 
   const updateFilters = (nextValues: { q?: string; status?: CampaignStatusFilter; type?: CampaignTypeFilter }) => {
     const nextParams = new URLSearchParams(searchParams)
@@ -185,7 +192,7 @@ export const CampaignsPage = () => {
         </CardHeader>
         <CardContent>
           <CampaignsTable
-            campaigns={campaigns}
+            campaigns={paginatedCampaigns}
             isLoading={campaignsQuery.isLoading}
             isError={campaignsQuery.isError}
             isTogglingActive={activeMutation.isPending}
@@ -195,6 +202,14 @@ export const CampaignsPage = () => {
             onToggleActive={(campaign) =>
               activeMutation.mutate({ campaignId: campaign.id, isActive: !campaign.is_active })
             }
+          />
+          <TablePagination
+            totalItems={campaigns.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            itemLabel="campaign"
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
           />
         </CardContent>
       </Card>

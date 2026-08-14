@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ActionNotice, Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui'
+import { ActionNotice, Card, CardContent, CardDescription, CardHeader, CardTitle, getPaginatedItems, TablePagination } from '../../components/ui'
 import { useCustomRequestsQuery } from '../../queries'
 import type { CustomRequest, CustomRequestStatusFilter } from '../../services'
 import { customRequestStatusLabels, normalizeCustomRequestStatus } from '../../utils'
@@ -25,6 +25,8 @@ export const CustomRequestsPage = () => {
   const search = searchParams.get('q') ?? ''
   const [searchInput, setSearchInput] = useState(search)
   const [selectedRequest, setSelectedRequest] = useState<CustomRequest | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [savedNotice, setSavedNotice] = useState<SavedCustomRequestNotice | null>(null)
   const customRequestsQuery = useCustomRequestsQuery({ search, status })
 
@@ -45,6 +47,7 @@ export const CustomRequestsPage = () => {
   }, [savedNotice])
 
   const requests = useMemo(() => customRequestsQuery.data ?? [], [customRequestsQuery.data])
+  const { items: paginatedRequests } = getPaginatedItems(requests, currentPage, pageSize)
   const pendingRequests = useMemo(() => requests.filter((request) => request.status === 'pending'), [requests])
   const contactedRequests = useMemo(() => requests.filter((request) => request.status === 'contacted'), [requests])
   const completedRequests = useMemo(() => requests.filter((request) => request.status === 'completed'), [requests])
@@ -68,6 +71,10 @@ export const CustomRequestsPage = () => {
 
     setSearchParams(nextParams)
   }
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, status, pageSize])
 
   const handleRequestSaved = (request: CustomRequest) => {
     setSavedNotice({
@@ -131,12 +138,20 @@ export const CustomRequestsPage = () => {
         </CardHeader>
         <CardContent>
           <CustomRequestsTable
-            requests={requests}
+            requests={paginatedRequests}
             isLoading={customRequestsQuery.isLoading}
             isError={customRequestsQuery.isError}
             highlightedRequestId={savedNotice?.id}
             onRetry={() => void customRequestsQuery.refetch()}
             onView={setSelectedRequest}
+          />
+          <TablePagination
+            totalItems={requests.length}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            itemLabel="yêu cầu"
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
           />
         </CardContent>
       </Card>

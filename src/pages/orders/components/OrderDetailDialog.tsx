@@ -10,6 +10,7 @@ import {
   getOrderDepositAmount,
   getOrderItemProduct,
   getOrderRemainingAmount,
+  getShortOrderCode,
   getOrderStatusLabel,
   getOrderStatusTone,
   getOrderTotal,
@@ -64,7 +65,9 @@ export const OrderDetailDialog = ({ order, onClose, onSaved }: OrderDetailDialog
         <div className="sticky top-0 z-10 flex items-center justify-between gap-4 rounded-t-admin border-b border-berry/10 bg-white px-5 py-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">Chi tiết đơn hàng</p>
-            <h3 className="mt-1 text-xl font-black text-ink">{order.customer_name}</h3>
+            <h3 className="mt-1 text-xl font-black text-ink">
+              #{getShortOrderCode(order.id)} · {order.customer_name}
+            </h3>
           </div>
           <button
             type="button"
@@ -122,6 +125,7 @@ export const OrderDetailDialog = ({ order, onClose, onSaved }: OrderDetailDialog
             <section className="rounded-admin border border-berry/10 bg-white p-4">
               <h4 className="font-black text-ink">Thông tin khách</h4>
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                <InfoRow label="Mã đơn" value={`#${getShortOrderCode(order.id)}`} />
                 <InfoRow label="Tên" value={order.customer_name} />
                 <InfoRow label="SĐT" value={order.phone} />
                 <InfoRow label="Địa chỉ" value={order.address} />

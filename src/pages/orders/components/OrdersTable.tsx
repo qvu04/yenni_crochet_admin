@@ -7,6 +7,7 @@ import {
   getOrderDepositAmount,
   getOrderItemsSummary,
   getOrderRemainingAmount,
+  getShortOrderCode,
   getOrderStatusLabel,
   getOrderStatusTone,
   getOrderTotal,
@@ -17,8 +18,11 @@ interface OrdersTableProps {
   isLoading: boolean
   isError: boolean
   highlightedOrderId?: string | null
+  selectedOrderIds?: string[]
   onRetry: () => void
   onView: (order: Order) => void
+  onToggleSelect?: (orderId: string) => void
+  onToggleSelectAll?: () => void
 }
 
 export const OrdersTable = ({
@@ -26,8 +30,11 @@ export const OrdersTable = ({
   isLoading,
   isError,
   highlightedOrderId,
+  selectedOrderIds = [],
   onRetry,
   onView,
+  onToggleSelect,
+  onToggleSelectAll,
 }: OrdersTableProps) => {
   if (isLoading) {
     return (
@@ -62,9 +69,24 @@ export const OrdersTable = ({
 
   return (
     <div className="overflow-x-auto rounded-admin border border-berry/10">
-      <table className="w-full min-w-[980px] text-left text-sm">
+      <table className="w-full min-w-[1100px] text-left text-sm">
         <thead className="bg-cream text-xs uppercase text-muted">
           <tr>
+            <th className="w-12 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={orders.length > 0 && selectedOrderIds.length === orders.length}
+                ref={(input) => {
+                  if (input) {
+                    input.indeterminate = selectedOrderIds.length > 0 && selectedOrderIds.length < orders.length
+                  }
+                }}
+                onChange={onToggleSelectAll}
+                className="h-4 w-4 rounded border-berry/20 text-berry"
+                aria-label="Chọn tất cả đơn hàng"
+              />
+            </th>
+            <th className="px-4 py-3">Mã đơn</th>
             <th className="px-4 py-3">Khách hàng</th>
             <th className="px-4 py-3">Sản phẩm</th>
             <th className="px-4 py-3">Thanh toán</th>
@@ -80,6 +102,21 @@ export const OrdersTable = ({
               data-order-row-id={order.id}
               className={order.id === highlightedOrderId ? 'bg-mint/60 transition-colors' : 'transition-colors'}
             >
+              <td className="px-4 py-4 align-top">
+                <input
+                  type="checkbox"
+                  checked={selectedOrderIds.includes(order.id)}
+                  onChange={() => onToggleSelect?.(order.id)}
+                  className="h-4 w-4 rounded border-berry/20 text-berry"
+                  aria-label={`Chọn đơn ${getShortOrderCode(order.id)}`}
+                />
+              </td>
+              <td className="px-4 py-4 align-top">
+                <p className="font-black text-ink">#{getShortOrderCode(order.id)}</p>
+                <p className="mt-1 max-w-32 truncate text-[11px] font-bold text-muted" title={order.id}>
+                  {order.id}
+                </p>
+              </td>
               <td className="px-4 py-4">
                 <p className="font-black text-ink">{order.customer_name}</p>
                 <p className="mt-1 text-xs font-bold text-muted">{order.phone}</p>
