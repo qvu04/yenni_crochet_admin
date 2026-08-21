@@ -73,7 +73,11 @@ export const normalizeOrderStatus = (value: string | null): OrderStatusFilter =>
     ? value
     : 'all'
 
-export const getOrderTotal = (order: Order) => Number(order.final_price ?? order.subtotal_price ?? 0)
+export const getOrderProductTotal = (order: Order) => Number(order.final_price ?? order.subtotal_price ?? 0)
+
+export const getOrderShippingFee = (order: Order) => Number(order.shipping_fee ?? 0)
+
+export const getOrderTotal = (order: Order) => getOrderProductTotal(order) + getOrderShippingFee(order)
 
 export const getOrderDepositAmount = (order: Order) => Number(order.deposit_amount ?? 0)
 

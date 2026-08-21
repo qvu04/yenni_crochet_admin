@@ -40,6 +40,7 @@ export interface Order {
   subtotal_price: number | null
   discount_amount: number | null
   final_price: number | null
+  shipping_fee: number | null
   payment_type: OrderPaymentType | null
   payment_status: OrderPaymentStatus | null
   deposit_rate: number | null
@@ -73,6 +74,7 @@ const ORDER_SELECT = `
   subtotal_price,
   discount_amount,
   final_price,
+  shipping_fee,
   payment_type,
   payment_status,
   deposit_rate,
@@ -135,6 +137,7 @@ const isMissingColumnError = (error: { code?: string; message?: string } | null)
 const withOrderDefaults = (order: Partial<Order>): Order => ({
   payment_type: null,
   payment_status: null,
+  shipping_fee: 0,
   deposit_rate: null,
   deposit_amount: null,
   remaining_amount: null,

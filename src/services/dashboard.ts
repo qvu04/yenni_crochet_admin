@@ -28,6 +28,7 @@ export interface DashboardOrder {
   subtotal_price: number | null
   discount_amount: number | null
   final_price: number | null
+  shipping_fee: number | null
   payment_type: 'deposit' | 'full' | 'none' | null
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded' | null
   deposit_amount: number | null
@@ -82,6 +83,7 @@ const DASHBOARD_ORDER_SELECT = `
   subtotal_price,
   discount_amount,
   final_price,
+  shipping_fee,
   payment_type,
   payment_status,
   deposit_amount,
@@ -157,6 +159,7 @@ const withDashboardCustomRequestDefaults = (
 const withDashboardOrderDefaults = (order: Partial<DashboardOrder>): DashboardOrder => ({
   payment_type: null,
   payment_status: null,
+  shipping_fee: 0,
   deposit_amount: null,
   remaining_amount: null,
   ...order,

@@ -14,7 +14,8 @@ export const statusTone = (status: string) => {
     if (status === 'confirmed' || status === 'shipping' || status === 'contacted') return 'info'
     return 'warning'
 };
-export const getOrderRevenue = (order: DashboardOrder) => Number(order.final_price ?? order.subtotal_price ?? 0);
+export const getOrderRevenue = (order: DashboardOrder) =>
+    Number(order.final_price ?? order.subtotal_price ?? 0) + Number(order.shipping_fee ?? 0);
 
 const isCancelledDashboardOrder = (order: DashboardOrder) => order.status === 'cancelled'
 

@@ -129,7 +129,7 @@ export const OrdersTable = ({
                 <p className="font-black text-ink">{formatCurrency(getOrderTotal(order))}</p>
                 {getOrderDepositAmount(order) > 0 ? (
                   <p className="mt-1 text-xs font-bold text-muted">
-                    Cọc {formatCurrency(getOrderDepositAmount(order))} · Còn {formatCurrency(getOrderRemainingAmount(order))}
+                    Đã TT hôm nay {formatCurrency(getOrderDepositAmount(order))} · Còn {formatCurrency(getOrderRemainingAmount(order))}
                   </p>
                 ) : null}
               </td>

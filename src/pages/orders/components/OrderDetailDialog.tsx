@@ -9,7 +9,9 @@ import {
   formatDateTime,
   getOrderDepositAmount,
   getOrderItemProduct,
+  getOrderProductTotal,
   getOrderRemainingAmount,
+  getOrderShippingFee,
   getShortOrderCode,
   getOrderStatusLabel,
   getOrderStatusTone,
@@ -136,11 +138,13 @@ export const OrderDetailDialog = ({ order, onClose, onSaved }: OrderDetailDialog
             <section className="rounded-admin border border-berry/10 bg-white p-4">
               <h4 className="font-black text-ink">Thanh toán</h4>
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                <InfoRow label="Tạm tính" value={formatCurrency(Number(order.subtotal_price ?? getOrderTotal(order)))} />
+                <InfoRow label="Tạm tính" value={formatCurrency(Number(order.subtotal_price ?? getOrderProductTotal(order)))} />
                 <InfoRow label="Giảm giá" value={formatCurrency(Number(order.discount_amount ?? 0))} />
+                <InfoRow label="Tổng sản phẩm" value={formatCurrency(getOrderProductTotal(order))} />
+                <InfoRow label="Phí ship" value={formatCurrency(getOrderShippingFee(order))} />
                 <InfoRow label="Hình thức" value={order.payment_type ? paymentTypeLabels[order.payment_type] : 'Chưa rõ'} />
                 <InfoRow label="Trạng thái" value={order.payment_status ? paymentStatusLabels[order.payment_status] : 'Chưa rõ'} />
-                <InfoRow label="Đã cọc" value={formatCurrency(getOrderDepositAmount(order))} />
+                <InfoRow label={order.payment_type === 'deposit' ? 'Đã thanh toán hôm nay' : 'Đã thanh toán'} value={formatCurrency(getOrderDepositAmount(order))} />
                 <InfoRow label="Còn lại" value={formatCurrency(getOrderRemainingAmount(order))} />
                 {order.paid_at ? <InfoRow label="Ngày thanh toán" value={formatDateTime(order.paid_at)} /> : null}
                 <InfoRow label="Tổng cộng" value={formatCurrency(getOrderTotal(order))} strong />
